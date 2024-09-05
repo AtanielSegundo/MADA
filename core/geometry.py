@@ -2,8 +2,11 @@ import numpy as np
 from numba import njit,prange
 from typing import *
 from matplotlib import pyplot as plt
-ANTICLOCKWISE = 1
-CLOCKWISE     = -1
+ANTICLOCKWISE  = 1.0
+EXTERNAL       = 1.0 
+CLOCKWISE      = -1.0
+INTERNAL       = -1.0
+
 def nthgone(n:int,ray:float,center_p=(0.,0.),pad=1/2,dir=ANTICLOCKWISE,closed=True) :
     '''
     **nthgone Function Documentation**
@@ -36,14 +39,12 @@ def nthgone(n:int,ray:float,center_p=(0.,0.),pad=1/2,dir=ANTICLOCKWISE,closed=Tr
     if closed : arr.append(arr[0])
     return np.array(arr)
 
-
-
 def offset_point(point: np.ndarray, magnitude: float, direction: int) -> np.ndarray:
     x, y = point
     v_angle = np.arctan2(y, x)  
     off_x = direction * magnitude * np.cos(v_angle)
     off_y = direction * magnitude * np.sin(v_angle)
-    return np.array([x + off_x, y + off_y])
+    return np.array([x - off_x, y - off_y])
 
 def raw_offset(geometry: np.ndarray, magnitude: float, direction: int) -> np.ndarray:
     new_geometry = np.zeros((len(geometry), 2))  
@@ -57,23 +58,26 @@ def nb_offset_point(point: np.ndarray, magnitude: float, direction: int) -> np.n
     v_angle = np.arctan2(y, x)  
     off_x = direction * magnitude * np.cos(v_angle)
     off_y = direction * magnitude * np.sin(v_angle)
-    return np.array([x + off_x, y + off_y])
+    return np.array([x - off_x, y - off_y])
 
 @njit(cache=True, parallel=True)
 def nb_offset(geometry: np.ndarray, magnitude: float, direction: int) -> np.ndarray:
-    new_geometry = np.zeros_like(geometry)  
+    new_geometry = np.zeros(geometry.shape)  
     for i in prange(len(geometry)):
         new_geometry[i] = nb_offset_point(geometry[i], magnitude, direction)
     return new_geometry
 
-def ShowGeometrys(geometrysList:List[List[np.ndarray]],titles=None) :
+def ShowGeometrys(geometrysList:List[List[np.ndarray]],fig_title=None,titles=None,spliter=2) :
     n = len(geometrysList)
     if titles: assert len(titles) == n
-    _,axs = plt.subplots(1,n)
+    rows = n//spliter + n%spliter 
+    _,axs = plt.subplots(rows,spliter)
     for ii,geometrys in enumerate(geometrysList) :
         for geometry in geometrys :
-            if n > 1 :
-                axs[ii].plot(geometry[:,0],geometry[:,1],"go-",markersize=1)
+            if (rows) > 1 :
+                axs[ii//spliter,ii%spliter].plot(geometry[:,0],geometry[:,1],"go-",markersize=1)
             else :
-                axs.plot(geometry[:,0],geometry[:,1],"go-",markersize=1)
-        if titles : axs[ii].set_title(titles[ii])
+                axs[ii%spliter].plot(geometry[:,0],geometry[:,1],"go-",markersize=1)
+        if titles : axs[ii//spliter,ii%spliter].set_title(titles[ii])
+    if fig_title: plt.suptitle(fig_title,fontsize=22,weight='bold')
+    plt.show()

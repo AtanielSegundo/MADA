@@ -1,11 +1,9 @@
-from core.geometry import nthgone,nb_offset,ShowGeometrys
+from core.geometry import nthgone,nb_offset,ShowGeometrys,INTERNAL,EXTERNAL
 from matplotlib import pyplot as plt
 from time import process_time_ns
 
-EXTERNAL = 1 ; INTERNAL=-1 
-
 if __name__ == "__main__" :
-    RAY = 0
+    RAY = 2
     NUM = 2
     geometry   = nthgone(1000,RAY)
     start_time = process_time_ns()
