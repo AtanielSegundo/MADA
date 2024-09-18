@@ -1,4 +1,4 @@
-from core.geometry import ShowGeometrys,nb_offset,INTERNAL,EXTERNAL,nthgone,raw_offset
+from core.geometry import ShowGeometrys,nb_offset,INTERNAL,EXTERNAL,nthgone,raw_offset,center_point
 from geometrys_pr import circle,square,triangle,hexagon
 import numpy as np
 
@@ -6,12 +6,12 @@ def inter(n,geometry,r=None,dir=INTERNAL) :
     if not r :
         x,y = geometry[0] 
         r   = np.sqrt(x*x+y*y)
-    return [raw_offset(geometry,i*(r/n),dir) for i in range(n)]
+    return [nb_offset(geometry,i*(r/(n)),dir) for i in range(n)]
     
 
 # square = nthgone(4,1)
 # print(square)
-N = 4
+N = 3
 
 #   ORIGINAL
 # ShowGeometrys([[triangle],
