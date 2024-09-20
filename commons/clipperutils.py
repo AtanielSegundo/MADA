@@ -2,13 +2,13 @@ import numpy as np
 from typing import List 
 import pyclipr
 
-def offsetPaths(Paths:List[np.ndarray],distance:float,iter:int) -> np.ndarray :
+def offsetPaths(Paths:List[np.ndarray],distance:float,iter:int,precisao:float=1e3) -> np.ndarray :
     offsetedFlat = Paths
     _Paths = Paths
     for _ in range(iter):
         new_temp = []
         po = pyclipr.ClipperOffset()
-        po.scaleFactor = int(1e3)            
+        po.scaleFactor = int(precisao)            
         po.addPaths(_Paths, pyclipr.JoinType.Miter,pyclipr.EndType.Polygon)
         resultArr = po.execute(distance)
         if resultArr:  
