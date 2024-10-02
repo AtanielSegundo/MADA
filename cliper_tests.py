@@ -89,6 +89,5 @@ if __name__ == "__main__" :
     redstuff,offseted = offsetRedStuff(DISTANCE=-40,ITER=1,show=True)
     np.savetxt("assets/global_loop.txt",redstuff,delimiter=",")
     np.savetxt("assets/global_loop_offset.txt",fold_3d_array_to_2d_using_NaN_separator(offseted),delimiter=",")
-    
 
     # offsetRedStuff(DISTANCE=-10,ITER=40)
