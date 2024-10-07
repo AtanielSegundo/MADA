@@ -1,6 +1,5 @@
 from commons.clipperutils import offsetPaths
-from core.geometry import ShowGeometrys,nthgone,center_point,CLOCKWISE
-from core.geometry import fold_3d_array_to_2d_using_NaN_separator
+from core.geometry import ShowGeometrys,nthgone
 from core.geometry import geometrys_from_txt_nan_separeted
 import os
 import numpy as np 

@@ -1,7 +1,7 @@
 import pyclipr.pyclipr
 from core.geometry import nthgone,nb_offset,ShowGeometrys,INTERNAL,EXTERNAL,center_point,fill_geometry_with_points,nb_points
 from matplotlib import pyplot as plt
-from geometrys_pr import triangle
+from assets.geometrys import triangle
 from time import process_time_ns
 import numpy as np
 import pyclipr

@@ -81,5 +81,5 @@ if __name__ == "__main__" :
     result = pc2.execute2(pyclipr.Union,pyclipr.FillRule.EvenOdd)
     area = result.area
     square = generate_square_box(10*area,form_center)
-    grid_points = generate_points_inside_square(square,5)
+    grid_points = generate_points_inside_square(square,10)
     ShowGeometrys([[rabbit,hole,filter_points_that_is_not_inside([rabbit,hole],grid_points)]],show_points=True)
