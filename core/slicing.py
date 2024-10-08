@@ -3,7 +3,7 @@ import pyslm
 import matplotlib.pyplot as pyplot
 from typing import List 
 from os.path import basename 
-from .visualize import ShowGeometrys,showSlices3d,showSlices3d_matplot
+from .visualize import ShowGeometrys,showSlices3d_matplot
 
 def sliceStlVector(stl_path: str, n_slices=6, z_step=14,
                    origin:List[float]=[5.0, 10.0, 0.0],
@@ -34,6 +34,7 @@ def sliceStlVector(stl_path: str, n_slices=6, z_step=14,
             slices.append(slice_3d_list)  
     if d2_mode: ShowGeometrys(slices,spliter=1 if n_slices == 1 else 2)    
     else: showSlices3d_matplot(slices)
+
 def sliceStlRaster(stl_path: str, n_slices=6, z_step=14,
                    origin: List[float] = [5.0, 10.0, 0.0],
                    rotation: np.ndarray = np.array([0, 0, 30]),
