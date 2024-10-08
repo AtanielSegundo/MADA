@@ -10,6 +10,7 @@ def sliceStlVector(stl_path: str, n_slices=6, z_step=14,
                    rotation:np.ndarray[float]=np.array([0, 0, 30]),
                    scaleFactor:float=2.0,
                    dropToPlataform:bool=True,
+                   offset_fn = None,
                    d2_mode=False,use_matplot=True):
     solidPart = pyslm.Part(basename(stl_path).split(".")[0])
     solidPart.setGeometry(stl_path)
@@ -21,7 +22,7 @@ def sliceStlVector(stl_path: str, n_slices=6, z_step=14,
     slices = []
     for i in range(n_slices):
         slice_2d_list = solidPart.getVectorSlice((i + 1) * z_step)
-        # offsetPaths(slice_2d_list,-5,20)
+        if offset_fn : offset_fn(slice_2d_list)
         if d2_mode :
             slices.append(slice_2d_list)
         else :
@@ -31,9 +32,8 @@ def sliceStlVector(stl_path: str, n_slices=6, z_step=14,
                 slice_3d = np.column_stack((slice_2d, z_values))         
                 slice_3d_list.append(slice_3d)
             slices.append(slice_3d_list)  
-    if d2_mode: ShowGeometrys(slices)    
-    else: showSlices3d_matplot(slices) if use_matplot else showSlices3d(slices)
-
+    if d2_mode: ShowGeometrys(slices,spliter=1 if n_slices == 1 else 2)    
+    else: showSlices3d_matplot(slices)
 def sliceStlRaster(stl_path: str, n_slices=6, z_step=14,
                    origin: List[float] = [5.0, 10.0, 0.0],
                    rotation: np.ndarray = np.array([0, 0, 30]),

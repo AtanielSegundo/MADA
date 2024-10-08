@@ -1,5 +1,5 @@
 from core.geometry import ShowGeometrys,nb_offset,INTERNAL,EXTERNAL,nthgone,raw_offset,center_point
-from geometrys_pr import circle,square,triangle,hexagon
+from assets.geometrys import circle,square,triangle,hexagon
 import numpy as np
 
 def inter(n,geometry,r=None,dir=INTERNAL) :

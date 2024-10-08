@@ -40,6 +40,23 @@ def nthgone(n:int,ray:float,center_p=(0.,0.),pad=1/2,dir=ANTICLOCKWISE,closed=Tr
     if closed : arr.append(arr[0])
     return np.array(arr)
 
+def rotate_180(points):
+    """Rotates the points by 180 degrees."""
+    center_x = (np.min(points[:, 0]) + np.max(points[:, 0])) / 2
+    center_y = (np.min(points[:, 1]) + np.max(points[:, 1])) / 2
+    translated_points = points - np.array([center_x, center_y])
+    rotated_points = -translated_points
+    rotated_points += np.array([center_x, center_y])
+    return rotated_points
+
+def flip_horizontal(points):
+    """Flips the points horizontally."""
+    center_x = (np.min(points[:, 0]) + np.max(points[:, 0])) / 2  
+    translated_points = points - np.array([center_x, 0])  
+    flipped_points = np.array([-translated_points[:, 0], translated_points[:, 1]]).T  
+    flipped_points += np.array([center_x, 0])  
+    return flipped_points
+
 @njit(cache=True, parallel=True)
 def ds_line_chunked(ds: float, p1: np.ndarray, p2: np.ndarray) -> Optional[Tuple[int, np.ndarray]]:
     """

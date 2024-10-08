@@ -4,7 +4,8 @@ import pyclipr
 from typing import List 
 from core.geometry import nthgone,center_point,CLOCKWISE
 from core.visualize import ShowGeometrys
-from commons.figutils import rotate_180,parse_svg_path
+from core.geometry import rotate_180
+from core.transform import parse_svg_path
 
 def offsetPaths(Paths:List[np.ndarray],distance:float,iter:int,precisao:float=1e3) -> np.ndarray :
     offsetedFlat = Paths
