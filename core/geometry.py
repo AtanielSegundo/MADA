@@ -57,7 +57,7 @@ def flip_horizontal(points):
     flipped_points += np.array([center_x, 0])  
     return flipped_points
 
-@njit(cache=True, parallel=True)
+
 def ds_line_chunked(ds: float, p1: np.ndarray, p2: np.ndarray) -> Optional[Tuple[int, np.ndarray]]:
     """
     Generate an array of points along a line segment.

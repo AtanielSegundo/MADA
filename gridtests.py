@@ -190,4 +190,4 @@ if __name__ == "__main__":
         "assets\\txt\\formas\\teste_biela.txt", iter=ITER, offset=-DISTANCE)
     geometrys = [rabbit, hole]
     points = [fill_geometrys_with_points(geometrys, DISTANCE)]
-    ShowGeometrys([geometrys], spliter=2, points_grids=points)
+    # ShowGeometrys([geometrys], spliter=2, points_grids=points) 
