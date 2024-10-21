@@ -136,28 +136,28 @@ def is_polygon_counterclockwise(polygon):
 
 
 @njit(cache=True)
-def nb_filter_invalid_points(geometry: List[np.ndarray], point_grid: np.ndarray, delta: float = -1) -> np.ndarray:
+def nb_filter_invalid_points(geometry: List[np.ndarray], point_grid: np.ndarray, delta: float = -1, fliped_y: bool=False) -> np.ndarray:
     points_inside = np.zeros((len(point_grid),), dtype=np.bool_)
 
     for polygon in geometry:
         as_polygon = polygon
-        if is_polygon_counterclockwise(as_polygon):
+        if fliped_y ^ is_polygon_counterclockwise(as_polygon):
             for i in range(len(point_grid)):
                 x, y = point_grid[i]
                 points_inside[i] |= point_in_polygon(
-                    x, y, as_polygon) and distance_to_polygon_edge(x, y, as_polygon) >= delta
+                    x, y, as_polygon) and distance_to_polygon_edge(x, y, as_polygon) >= (delta)
         else:
 
             for i in range(len(point_grid)):
                 x, y = point_grid[i]
                 points_inside[i] &= not point_in_polygon(
-                    x, y, as_polygon) and distance_to_polygon_edge(x, y, as_polygon) >= delta
+                    x, y, as_polygon) and distance_to_polygon_edge(x, y, as_polygon) >= (delta)
 
     points_inside_array = point_grid[points_inside]
     return points_inside_array
 
 
-def fill_geometrys_with_points(geometrys: List[np.ndarray], delta: float, correction_factor: int = 4):
+def fill_geometrys_with_points(geometrys: List[np.ndarray], delta: float, correction_factor: int = 4, fliped_y=False):
     geometrys_center = center_point(geometrys[0])
     for idx, geometry in enumerate(geometrys[1:]):
         geometrys_center, _ = online_mean(
@@ -176,7 +176,7 @@ def fill_geometrys_with_points(geometrys: List[np.ndarray], delta: float, correc
     square = generate_square_box_by_lenght(square_len, geometrys_center)
     points = generate_points_inside_square(square, delta)
     filtered_points = nb_filter_invalid_points(
-        geometrys, points, delta=delta)
+        geometrys, points, delta=delta,fliped_y=fliped_y)
     return filtered_points
 
 
@@ -190,4 +190,4 @@ if __name__ == "__main__":
         "assets\\txt\\formas\\teste_biela.txt", iter=ITER, offset=-DISTANCE)
     geometrys = [rabbit, hole]
     points = [fill_geometrys_with_points(geometrys, DISTANCE)]
-    # ShowGeometrys([geometrys], spliter=2, points_grids=points) 
+    # ShowGeometrys([geometrys], spliter=2, points_grids=points)
