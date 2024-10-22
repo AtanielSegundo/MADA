@@ -14,6 +14,7 @@ def ShowGeometrys(geometrysList: List[List[np.ndarray]], fig_title=None, titles=
                   spliter=2, points_grids: List[List[np.ndarray]] = None,
                   points_grids_color_idx_map: List[np.ndarray] = None,
                   points_grids_clusters_centers: List[np.ndarray] = None,
+                  points_grids_vector_idx_map: List[np.ndarray] = None,
                   background_color="white",
                   file_name: str = None, show_plot=True):
     n = len(geometrysList)
@@ -22,7 +23,7 @@ def ShowGeometrys(geometrysList: List[List[np.ndarray]], fig_title=None, titles=
     if points_grids_color_idx_map is not None:
         idxs_to_colors_maps = []
         for points_grid_color_idx_map in points_grids_color_idx_map:
-            needed_color_len = np.max(points_grid_color_idx_map)
+            needed_color_len = np.max(points_grid_color_idx_map)+1
             r_idxs = np.random.choice(
                 _AVAILABLE_IDXS, needed_color_len, replace=False)
             idxs_to_colors_maps.append(np.array(_AVAILABLE_COLORS)[r_idxs])
@@ -54,8 +55,7 @@ def ShowGeometrys(geometrysList: List[List[np.ndarray]], fig_title=None, titles=
             else:
                 for idx, point in enumerate(points_grids[ii]):
                     _plotter.plot(point[0], point[1], 'o', markersize=1,
-                                  color=idxs_to_colors_maps[ii][points_grids_color_idx_map[ii][idx]-1])
-
+                                  color=idxs_to_colors_maps[ii][points_grids_color_idx_map[ii][idx]])
                 if points_grids_clusters_centers is not None and points_grids_clusters_centers[ii] is not None:
                     for idx, c_point in enumerate(points_grids_clusters_centers[ii]):
                         _plotter.plot(
@@ -63,7 +63,13 @@ def ShowGeometrys(geometrysList: List[List[np.ndarray]], fig_title=None, titles=
                             color="black")
                         _plotter.plot(
                             c_point[0], c_point[1], 'o', markersize=3,
-                            color=idxs_to_colors_maps[ii][idx-1])
+                            color=idxs_to_colors_maps[ii][idx])
+            if points_grids_vector_idx_map and (ii) < len(points_grids_vector_idx_map) and points_grids_vector_idx_map[ii] is not None:
+                vector_map = points_grids_vector_idx_map[ii] 
+                for idx in range(len(vector_map)-1):
+                    x0, y0 = points_grids[ii][vector_map[idx]]
+                    x1, y1 = points_grids[ii][vector_map[idx+1]]
+                    _plotter.arrow(x0,y0,x1-x0,y1-y0,head_width=4,head_length=1,color="red")
 
         if titles:
             axs[ii // spliter, ii % spliter].set_title(titles[ii])

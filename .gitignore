@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+#custom
+outputs/*
+!outputs/.keep
+
 # C extensions
 *.so
 

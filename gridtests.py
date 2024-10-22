@@ -136,22 +136,19 @@ def is_polygon_counterclockwise(polygon):
 
 
 @njit(cache=True)
-def nb_filter_invalid_points(geometry: List[np.ndarray], point_grid: np.ndarray, delta: float = -1, fliped_y: bool=False) -> np.ndarray:
+def nb_filter_invalid_points(geometry: List[np.ndarray], point_grid: np.ndarray, delta: float = -1, fliped_y: bool = False) -> np.ndarray:
     points_inside = np.zeros((len(point_grid),), dtype=np.bool_)
-
     for polygon in geometry:
-        as_polygon = polygon
-        if fliped_y ^ is_polygon_counterclockwise(as_polygon):
+        if fliped_y ^ is_polygon_counterclockwise(polygon):
             for i in range(len(point_grid)):
                 x, y = point_grid[i]
                 points_inside[i] |= point_in_polygon(
-                    x, y, as_polygon) and distance_to_polygon_edge(x, y, as_polygon) >= (delta)
+                    x, y, polygon) and distance_to_polygon_edge(x, y, polygon) >= (delta)
         else:
-
             for i in range(len(point_grid)):
                 x, y = point_grid[i]
                 points_inside[i] &= not point_in_polygon(
-                    x, y, as_polygon) and distance_to_polygon_edge(x, y, as_polygon) >= (delta)
+                    x, y, polygon) and distance_to_polygon_edge(x, y, polygon) >= (delta)
 
     points_inside_array = point_grid[points_inside]
     return points_inside_array
@@ -176,7 +173,7 @@ def fill_geometrys_with_points(geometrys: List[np.ndarray], delta: float, correc
     square = generate_square_box_by_lenght(square_len, geometrys_center)
     points = generate_points_inside_square(square, delta)
     filtered_points = nb_filter_invalid_points(
-        geometrys, points, delta=delta,fliped_y=fliped_y)
+        geometrys, points, delta=delta, fliped_y=fliped_y)
     return filtered_points
 
 
