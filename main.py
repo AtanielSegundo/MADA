@@ -1,5 +1,7 @@
 import pyclipr.pyclipr
-from core.geometry import nthgone, nb_offset, ShowGeometrys, INTERNAL, EXTERNAL, center_point, fill_geometry_with_points, nb_points
+from core.geometry import nthgone,INTERNAL,EXTERNAL,center_point,fill_geometry_with_points
+from core.visualize._2d import SlicesPlotter
+from core.visualize import ShowGeometrys
 from matplotlib import pyplot as plt
 from assets.geometrys import triangle
 from time import process_time_ns
@@ -67,5 +69,7 @@ if __name__ == "__main__":
 
     # Apply the offsetting operation using a delta.
     offsetSquare = np.array(po.execute(-2)[0])
-    print(offsetSquare)
-    ShowGeometrys([[np.array(path), offsetSquare]], spliter=2)
+    s = SlicesPlotter([[offsetSquare],[np.array(path)]],split_in=1,tile_direction='horizontal',title="test")
+    s.draw_titles(["a","b"])
+    s.set_background_colors(["black","black"])
+    s.show()

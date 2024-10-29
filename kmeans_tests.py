@@ -43,7 +43,7 @@ if __name__ == "__main__":
     #generatePointsAndClusters(forma, "outputs\\rabbit.png")
     
     PATH = "assets/txt/formas"
-    DISTANCE = 10
+    DISTANCE = 5
     CLUSTER_N = 6
     OUTPUT_PATH = f"outputs/d_{DISTANCE}_cn_{CLUSTER_N}"
     try:

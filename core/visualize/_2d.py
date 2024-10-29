@@ -1,14 +1,128 @@
-from typing import List
+from typing import List, Tuple,  Literal
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import Figure, Axes
 import matplotlib.colors as mcolors
+
 
 _PFIXES = ["dark", "deep", "medium"]
 _AVAILABLE_COLORS = list(mcolors.CSS4_COLORS.keys())
 _AVAILABLE_COLORS = [color for color in _AVAILABLE_COLORS if (
-                     any((a in color) for a in _PFIXES))]
+    any((a in color) for a in _PFIXES))]
 _AVAILABLE_IDXS = np.arange(stop=len(_AVAILABLE_COLORS))
 
+class TiledAxesIter:
+    def __vertical_tile_iter__(self,idx:int):
+        if self.iter_dim_nums == 0 :
+            return self.axes[0] 
+        if self.iter_dim_nums == 1 :
+            return self.axes[idx]
+        if self.iter_dim_nums == 2 :
+            return self.axes[idx%self.split_in][idx//self.split_in]
+
+    def __horizontal_tile_iter__(self,idx:int):
+        if self.iter_dim_nums == 0 :
+            return self.axes[0]
+        if self.iter_dim_nums == 1 :
+            return self.axes[idx]
+        if self.iter_dim_nums == 2 :
+            return self.axes[idx//self.split_in][idx%self.split_in]
+
+    def __init__(self,axes:Axes,slices_len:int,tile_direction:str,split_in:int,iter_dim_nums:Literal[0,1,2]):
+        self.tile_direction = tile_direction
+        self.iter_dim_nums = iter_dim_nums
+        self.axes = axes
+        self.slices_len = slices_len
+        self.split_in = split_in
+        self.axes_getter = self.__vertical_tile_iter__ if self.tile_direction == 'vertical' else self.__horizontal_tile_iter__
+            
+    def __getitem__(self,idx:int) :
+        return self.axes_getter(idx%self.slices_len) 
+        
+class SlicesPlotter:
+    @staticmethod
+    def __get_axes_dimension(_dim_flated,slices_len,split_in) :
+        _axes_dim = 0
+        if slices_len == 1:
+            _axes_dim = 0
+        elif _dim_flated > 1 and split_in > 1:
+            _axes_dim = 2
+        elif _dim_flated > 1 or split_in > 1:
+            _axes_dim = 1
+        elif _dim_flated > 1 and split_in == 1:
+            _axes_dim = 1    
+        return _axes_dim
+    
+    def __create_fig_axes__(self):
+        if self.slices is None:
+            raise Exception("Cant Create Figure And Axes For 'None' Slices")
+        else:
+            slices_len = len(self.slices)
+            _dim_flated = slices_len // self.split_in + slices_len % self.split_in 
+            _axes_dim = self.__get_axes_dimension(_dim_flated,slices_len,self.split_in)
+            if self.tile_direction == 'vertical':
+                rows = _dim_flated
+                fig, axs = plt.subplots(rows, self.split_in)
+                self.fig = fig
+                self.axs = TiledAxesIter(axs,slices_len,'vertical',self.split_in,_axes_dim)
+            elif self.tile_direction == 'horizontal':
+                columns = _dim_flated
+                fig, axs = plt.subplots(self.split_in,columns)
+                self.fig = fig
+                self.axs = TiledAxesIter(axs,slices_len,'horizontal',self.split_in,_axes_dim)
+            else:
+                raise Exception(f"Invalid Tile Direction: '{self.tile_direction}'")
+            
+    def __init__(self, slices: List[np.ndarray] = None, split_in=1,
+                 tile_direction: Literal['vertical','horizontal'] = 'vertical',
+                 title=None,
+                 subplots_instance: Tuple[Figure, Axes] = None,
+                 use_tight=True):
+        self.tile_direction = tile_direction
+        self.split_in = split_in
+        self.figs_titles = None
+        self.fig_title = None
+        self.slices = slices
+        self.slices_len = len(slices)
+        self.slices_drawed = False
+        if subplots_instance is None:
+            if self.slices is not None:
+                self.__create_fig_axes__()
+        else:
+            self.fig, axes = subplots_instance
+            _dim_flated = self.slices_len // self.split_in + self.slices_len % self.split_in
+            _axes_dim = self.__get_axes_dimension(_dim_flated,self.slices_len,self.split_in)
+            self.axes = TiledAxesIter(axes,self.slices_len,tile_direction,self.split_in,_axes_dim)
+        if title:
+            self.fig.suptitle(title, fontsize=22, weight='bold')
+        self.fig.set_tight_layout(use_tight)
+
+    def draw_titles(self,titles:List[str]):
+        assert len(titles) == self.slices_len
+        for ii in range(self.slices_len):
+            canvas = self.axs[ii]
+            canvas.set_title(titles[ii])
+            
+    def set_background_colors(self,bg_colors:List[str]) :
+        assert len(bg_colors) == self.slices_len
+        for ii in range(self.slices_len):
+            canvas = self.axs[ii]
+            canvas.set_facecolor(bg_colors[ii])
+            
+    def draw_slices(self,marker_size = 1,line_kind = "o-",bg_color='white'):
+        for ii in range(self.slices_len):
+            canvas = self.axs[ii]
+            for slice in self.slices[ii]:
+                canvas.plot(slice[:, 0], slice[:, 1],line_kind,markersize=marker_size)
+        self.slices_drawed = True
+            
+    def show(self):
+        if not self.slices_drawed:
+            self.draw_slices()
+        self.fig.show()
+        input("Enter To Destroy Window: ")
+        
+        
 
 def ShowGeometrys(geometrysList: List[List[np.ndarray]], fig_title=None, titles=None,
                   spliter=2, points_grids: List[List[np.ndarray]] = None,
@@ -65,11 +179,12 @@ def ShowGeometrys(geometrysList: List[List[np.ndarray]], fig_title=None, titles=
                             c_point[0], c_point[1], 'o', markersize=3,
                             color=idxs_to_colors_maps[ii][idx])
             if points_grids_vector_idx_map and (ii) < len(points_grids_vector_idx_map) and points_grids_vector_idx_map[ii] is not None:
-                vector_map = points_grids_vector_idx_map[ii] 
+                vector_map = points_grids_vector_idx_map[ii]
                 for idx in range(len(vector_map)-1):
                     x0, y0 = points_grids[ii][vector_map[idx]]
                     x1, y1 = points_grids[ii][vector_map[idx+1]]
-                    _plotter.arrow(x0,y0,x1-x0,y1-y0,head_width=4,head_length=1,color="red")
+                    _plotter.arrow(x0, y0, x1-x0, y1-y0,
+                                   head_width=4, head_length=1, color="red")
 
         if titles:
             axs[ii // spliter, ii % spliter].set_title(titles[ii])

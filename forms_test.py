@@ -12,7 +12,6 @@ def create_two_semi_circles(ray: float, separation: float, c_points=1000):
     semi_circle_2 = np.array([[semi_circle_2[idx % len(semi_circle_2)]] for idx in range(len(semi_circle_2)+1)])
     return [semi_circle_1, semi_circle_2]
 
-
 if __name__ == "__main__":
     ITERACOES = 40
     OFFSET = -2

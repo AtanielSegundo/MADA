@@ -24,7 +24,7 @@ if __name__ == "__main__":
     CLUSTER_N = 2
     ITERATIONS = 20
     forma = geometrys_from_txt_nan_separeted(test_file)
-    grid, pred, centers = generatePointsAndClusters(
+    grid, pred, centers = generateP2ointsAndClusters(
         forma, distance=DISTANCE, clusters_n=CLUSTER_N)
     grid_clusters = [list() for _ in range(np.max(pred)+1)]
     for jj, p in enumerate(pred):
