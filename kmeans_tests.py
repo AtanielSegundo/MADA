@@ -14,7 +14,7 @@ from core.slicing import getSliceStl
 def savePointsAndClusters(file_path: str, forma, pointgrid,
                           predictions, clusters_centers, bg_color="black"):
     if all([p is not None for p in [forma, predictions, clusters_centers]]):
-        ShowGeometrys([forma, forma],
+        ShowGeometrys([[np.array([[0,0]])],forma],
                       points_grids=[pointgrid,
                                     pointgrid], background_color=bg_color,
                       points_grids_color_idx_map=[predictions],
@@ -23,14 +23,15 @@ def savePointsAndClusters(file_path: str, forma, pointgrid,
                       )
 
 
-def generatePointsAndClusters(forma: List[np.ndarray], clusters_n=6,
-                              clusters_iters=600, distance=5, fliped_y=False):
-    pointgrid = fill_geometrys_with_points(forma, distance, fliped_y=fliped_y)
+def generatePointsAndClusters(forma: List[np.ndarray], clusters_n=6, seed=None,
+                              clusters_iters=600, distance=5, fliped_y=False,figure_sep=None):
+    figure_sep = figure_sep or 0.5
+    pointgrid = fill_geometrys_with_points(forma, distance, figure_sep=figure_sep, fliped_y=fliped_y)
     print(f"{len(pointgrid)} points created inside geometry")
     if len(pointgrid) < clusters_n:
         print("Not enough points in pointgrid")
         return None, None, None
-    k_means = KMeans(n_clusters=clusters_n, max_iter=clusters_iters)
+    k_means = KMeans(n_clusters=clusters_n, max_iter=clusters_iters,random_state=seed)
     k_means.fit(pointgrid)
     clusters_centers = k_means.cluster_centers_
     predictions = k_means.predict(pointgrid)
@@ -85,10 +86,8 @@ if __name__ == "__main__":
             forma = getSliceStl(os.path.join(PATH, arquivo), z=1)
         else:
             forma = getSliceStl(os.path.join(PATH, arquivo), z=1, scaleFactor=0.25)
-            file_name = arquivo.replace(".stl", "_pg.png")
-            grid, pred, centers = generatePointsAndClusters(
-            forma,  distance=DISTANCE, clusters_n=CLUSTER_N, fliped_y=True)
-        savePointsAndClusters(os.path.join(
-            OUTPUT_PATH, file_name), forma, grid, pred, centers)
+        file_name = arquivo.replace(".stl", "_pg.png")
+        grid, pred, centers = generatePointsAndClusters(forma,  distance=DISTANCE, clusters_n=CLUSTER_N, fliped_y=True)
+        savePointsAndClusters(os.path.join(OUTPUT_PATH, file_name), forma, grid, pred, centers)
         print()
     

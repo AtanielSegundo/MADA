@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as pyplot
 from os.path import basename
 from typing import List
-from ._slice_viewer import SliceViewer,pyglet
 
 def showStl(stl_path:str,scale=0.1) :
     solidPart = pyslm.Part(basename(stl_path).split(".")[0])
@@ -13,6 +12,8 @@ def showStl(stl_path:str,scale=0.1) :
     solidPart.geometry.show()
 
 def showSlices3d(slices:List[List[np.ndarray]]):
+    import pyglet
+    from ._slice_viewer import SliceViewer
     """
     Use Pyglet to visualize the 3D slices in a 3D space.
 

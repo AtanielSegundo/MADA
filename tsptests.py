@@ -6,14 +6,16 @@ from py2opt.routefinder import RouteFinder
 
 
 @njit(cache=True, parallel=True)
-def compute_distance_matrix_numba_parallel(points):
-    num_points = points.shape[0]
-    distance_matrix = np.zeros((num_points, num_points), dtype=np.float64)
-    for i in prange(num_points):
-        for j in range(num_points):
+def compute_distance_matrix_numba_parallel(pointsA,pointsB):
+    ''' rows: idxs points A, columns: idxs points B '''
+    row_points = pointsA.shape[0]
+    col_points = pointsB.shape[0]
+    distance_matrix = np.zeros((row_points, col_points), dtype=np.float32)
+    for i in prange(row_points):
+        for j in range(col_points):
             if i != j:
-                distance_matrix[i, j] = np.sqrt((points[i, 0] - points[j, 0]) ** 2 +
-                                                (points[i, 1] - points[j, 1]) ** 2)
+                distance_matrix[i, j] = np.sqrt((pointsA[i, 0] - pointsB[j, 0]) ** 2 +
+                                                (pointsA[i, 1] - pointsB[j, 1]) ** 2)
 
     return distance_matrix
 

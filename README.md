@@ -1,3 +1,4 @@
+
 <h1 align="center">MADA</h1>
 <h2 align="center">(Manufatura Aditiva por Deposição a Arco)</h2>
 
@@ -14,3 +15,4 @@ planejamento de caminho [PIXEL](https://www.mdpi.com/2075-4701/11/3/498) para MA
 - **Superfície Hermética (watertight)**: A superfície do sólido precisa se comportar como uma “casca” lisa e contínua em 3D.
 - **Camada (Layer)**: Conjunto de ilhas e/ou furos obtidos a partir da interseção da geometria com um plano.
 - **Ilha | Furo**: São polígonos (convexos ou côncavos) orientados; quando um polígono está no sentido anti-horário, é uma ilha, e quando está no sentido horário, é um furo.
+- **Grade(Grid): Conjunto de pontos(x,y) em um plano z com uma mesma distância D vertical e horizontal entre si. 

@@ -1,7 +1,7 @@
-import pyglet
 import numpy as np
-from pyglet.gl import *
 from scipy.spatial import Delaunay
+import pyglet
+from pyglet.gl import *
 
 class SliceViewer(pyglet.window.Window):
     def __init__(self, slices: list[list[np.ndarray]], width=1280, height=720):

@@ -154,7 +154,7 @@ def nb_filter_invalid_points(geometry: List[np.ndarray], point_grid: np.ndarray,
     return points_inside_array
 
 
-def fill_geometrys_with_points(geometrys: List[np.ndarray], delta: float, correction_factor: int = 4, fliped_y=False):
+def fill_geometrys_with_points(geometrys: List[np.ndarray], delta: float, figure_sep:float = 1, correction_factor: int = 4, fliped_y=False):
     geometrys_center = center_point(geometrys[0])
     for idx, geometry in enumerate(geometrys[1:]):
         geometrys_center, _ = online_mean(
@@ -173,7 +173,7 @@ def fill_geometrys_with_points(geometrys: List[np.ndarray], delta: float, correc
     square = generate_square_box_by_lenght(square_len, geometrys_center)
     points = generate_points_inside_square(square, delta)
     filtered_points = nb_filter_invalid_points(
-        geometrys, points, delta=delta, fliped_y=fliped_y)
+        geometrys, points, delta=figure_sep, fliped_y=fliped_y)
     return filtered_points
 
 
