@@ -6,7 +6,7 @@ __pycache__/
 #custom
 outputs/*
 !outputs/.keep
-
+*.*~
 # C extensions
 *.so
 
