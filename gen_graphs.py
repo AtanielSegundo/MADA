@@ -1,9 +1,10 @@
-from lkh_clusters import generateClustersMergedPath,generateClustersPath,generatePathRaw,generatePathOpenClusters
+from lkh_clusters import generateClustersMergedPath,generateClustersPath,generatePathRaw,generatePathOpenClusters,generateCHRaw,generatePathCHOpenClusters
 from core.transform import geometrys_from_txt_nan_separeted
 from commons.utils.clipper import readPathSVG
 from core.slicing import getSliceStl
-from core.visualize import ShowGeometrys
+from core.visualize import ShowGeometrys,SlicesPlotter
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 def plot_metric(outs_results, metric_index, metric_name, forma_name):
     plt.figure(figsize=(10, 6))
@@ -26,31 +27,35 @@ def plot_metric(outs_results, metric_index, metric_name, forma_name):
 
 if __name__ == "__main__":
     SEED = 777
-    DISTANCE = 7
+    DISTANCE = 5
     LKH_RUNS = 2
     target_clusters_n = [3,4,6,8,12,16]
 
-    pwd_generators = [("Clusters Unidos TSP",generateClustersMergedPath),
-                  ("Cluster Separados",generateClustersPath),
-                  ("Clusters Caminho Aberto",generatePathOpenClusters)]
-    
+    pwd_generators = [
+                  ("Clusters Unidos TSP", generateClustersMergedPath),
+                  ("Raw com CH", generateCHRaw),
+                  ("Cluster Separados", generateClustersPath),
+                  ("Clusters Caminho Aberto", generatePathOpenClusters),
+                  ("Clusters Caminho Aberto CH", generatePathCHOpenClusters)
+                  ]
+
     non_fliped_formas = [geometrys_from_txt_nan_separeted("assets/txt/formas/circulo_furo.txt"),[readPathSVG("assets/svg/rabbit.svg")]]
 
-
-    fliped_formas = [getSliceStl("assets/3d/flange16furos.stl",z=1,scaleFactor=0.75),
+    fliped_formas = [
+                  getSliceStl("assets/3d/flange16furos.stl",z=1,scaleFactor=0.75),
                   getSliceStl("assets/3d/Flange_inventor.stl",z=2),
                   getSliceStl("assets/3d/Petro_foice.stl",z=2)]
 
-    for forma in non_fliped_formas+fliped_formas:
-        ShowGeometrys([forma],spliter=1)
-
-    exit()
-
     for forma_idx,forma in enumerate(fliped_formas):
-        raw_exec_time, raw_total_lenght, raw_angle_delta_mean = generatePathRaw(2, forma, DISTANCE, seed=SEED, runs=LKH_RUNS,fliped_y=True)
+        forma_name = f"Forma_fp_{forma_idx + 1}"
+        raw_exec_time, raw_total_lenght, raw_angle_delta_mean, number_of_points, grid= generatePathRaw(2, forma, DISTANCE, seed=SEED, runs=LKH_RUNS,fliped_y=True)
+        _img_plt = SlicesPlotter([None])
+        _img_plt.draw_points([grid])
+        _img_plt.draw_fig_title(f"Points:{number_of_points}")
+        _img_plt.save(f"./outputs/metricas_plot/Forma_fp_{forma_idx + 1}.png")
         outs_results = {n_cluster: {pwd_tag: [0, 0, 0] for pwd_tag, _ in pwd_generators} for n_cluster in target_clusters_n}
         outs_results["raw"] = {"Raw Path": [raw_exec_time, raw_total_lenght, raw_angle_delta_mean]}
-        for n_cluster in target_clusters_n:
+        for n_cluster in tqdm(target_clusters_n, desc=f"Processing clusters for {forma_name}"):
             for pwd_tag, pwd_fn in pwd_generators:
                 _exec_time, _total_lenght, _angle_delta_mean = pwd_fn(
                 n_cluster, forma, DISTANCE, seed=SEED, runs=LKH_RUNS, fliped_y=True
@@ -58,17 +63,21 @@ if __name__ == "__main__":
                 outs_results[n_cluster][pwd_tag][0] = _exec_time
                 outs_results[n_cluster][pwd_tag][1] = _total_lenght
                 outs_results[n_cluster][pwd_tag][2] = _angle_delta_mean
-        forma_name = f"Forma_fp_{forma_idx + 1}"  
         plot_metric(outs_results, metric_index=0, metric_name="Execution_Time", forma_name=forma_name)
         plot_metric(outs_results, metric_index=1, metric_name="Total_Length", forma_name=forma_name)
         plot_metric(outs_results, metric_index=2, metric_name="Angle_Delta_Mean", forma_name=forma_name)
 
 
     for forma_idx,forma in enumerate(non_fliped_formas):
-        raw_exec_time, raw_total_lenght, raw_angle_delta_mean = generatePathRaw(2, forma, DISTANCE, seed=SEED, runs=LKH_RUNS)
+        forma_name = f"Forma_nf_{forma_idx + 1}"
+        raw_exec_time, raw_total_lenght, raw_angle_delta_mean, number_of_points, grid = generatePathRaw(2, forma, DISTANCE, seed=SEED, runs=LKH_RUNS)
+        _img_plt = SlicesPlotter([None])
+        _img_plt.draw_points([grid])
+        _img_plt.draw_fig_title(f"Points:{number_of_points}")
+        _img_plt.save(f"./outputs/metricas_plot/Forma_nf_{forma_idx + 1}.png")
         outs_results = {n_cluster: {pwd_tag: [0, 0, 0] for pwd_tag, _ in pwd_generators} for n_cluster in target_clusters_n}
         outs_results["raw"] = {"Raw Path": [raw_exec_time, raw_total_lenght, raw_angle_delta_mean]}
-        for n_cluster in target_clusters_n:
+        for n_cluster in tqdm(target_clusters_n, desc=f"Processing clusters for {forma_name}"):
             for pwd_tag, pwd_fn in pwd_generators:
                 _exec_time, _total_lenght, _angle_delta_mean = pwd_fn(
                 n_cluster, forma, DISTANCE, seed=SEED, runs=LKH_RUNS
@@ -76,7 +85,6 @@ if __name__ == "__main__":
                 outs_results[n_cluster][pwd_tag][0] = _exec_time
                 outs_results[n_cluster][pwd_tag][1] = _total_lenght
                 outs_results[n_cluster][pwd_tag][2] = _angle_delta_mean
-        forma_name = f"Forma_nf_{forma_idx + 1}"  
         plot_metric(outs_results, metric_index=0, metric_name="Execution_Time", forma_name=forma_name)
         plot_metric(outs_results, metric_index=1, metric_name="Total_Length", forma_name=forma_name)
         plot_metric(outs_results, metric_index=2, metric_name="Angle_Delta_Mean", forma_name=forma_name)
