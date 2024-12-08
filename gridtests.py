@@ -172,6 +172,7 @@ def fill_geometrys_with_points(geometrys: List[np.ndarray], delta: float, figure
     square_len = correction_factor*norma(max_point)
     square = generate_square_box_by_lenght(square_len, geometrys_center)
     points = generate_points_inside_square(square, delta)
+    
     filtered_points = nb_filter_invalid_points(
         geometrys, points, delta=figure_sep, fliped_y=fliped_y)
     return filtered_points

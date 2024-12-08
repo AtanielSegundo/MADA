@@ -23,7 +23,7 @@ class TiledAxesIter:
 
     def __horizontal_tile_iter__(self, idx: int):
         if self.iter_dim_nums == 0:
-            return self.axes[0]
+            return self.axes
         if self.iter_dim_nums == 1:
             return self.axes[idx]
         if self.iter_dim_nums == 2:
@@ -138,13 +138,14 @@ class SlicesPlotter:
             color_amount = np.max(colors_maps) if colors_maps is not None else 10
             self.set_random_usable_colors(color_amount)
         for ii in range(len(points)):
-            canvas = self.axs[ii]
-            c_map = colors_maps[ii] if (colors_maps is not None and ii < len(colors_maps)) else None
-            for idx,point in enumerate(points[ii]):
-                if edgesize > 0:
-                    canvas.plot(point[0], point[1], 'o', markersize=(markersize+edgesize), color=edgecolor) 
-                color = self.usable_colors[c_map[idx]] if c_map is not None else self.usable_colors[0]
-                canvas.plot(point[0], point[1], 'o', markersize=markersize, color=color)
+            if points[ii] is not None:
+                canvas = self.axs[ii]
+                c_map = colors_maps[ii] if (colors_maps is not None and ii < len(colors_maps)) else None
+                for idx,point in enumerate(points[ii]):
+                    if edgesize > 0:
+                        canvas.plot(point[0], point[1], 'o', markersize=(markersize+edgesize), color=edgecolor) 
+                    color = self.usable_colors[c_map[idx]] if c_map is not None else self.usable_colors[0]
+                    canvas.plot(point[0], point[1], 'o', markersize=markersize, color=color)
 
     def draw_vectors(self,points:List[np.ndarray],vectors_map:List[np.ndarray],
                      thick:int=1,color='red'):
@@ -161,7 +162,7 @@ class SlicesPlotter:
                         a = np.arctan2((y1-y0),(x1-x0))
                         cx,cy = (thick/2)*np.cos(a) , (thick/2)*np.sin(a)  
                         canvas.arrow(x0+cx, y0+cy, (x1-x0)-2.5*cx, (y1-y0)-2.5*cy,
-                                     width=thick/4,head_width=thick/2,head_length=thick/2, color=color)
+                                     width=thick/4,head_width=thick,head_length=thick, color=color)
 
 
     def draw_slices(self, marker_size=1, line_kind="o-", bg_color='white'):

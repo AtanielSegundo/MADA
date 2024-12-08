@@ -23,11 +23,21 @@ def savePointsAndClusters(file_path: str, forma, pointgrid,
                       )
 
 
+def generate_intermediate_points(start: np.ndarray, end: np.ndarray, step: float) -> np.ndarray:
+    distance = np.linalg.norm(end - start)
+    num_steps = int(distance // step)
+    intermediate_points = []
+    for i in range(1, num_steps + 1):
+        t = i / (num_steps + 1)
+        intermediate_point = start + t * (end - start)
+        intermediate_points.append(intermediate_point)
+    
+    return np.array(intermediate_points)
+
 def generatePointsAndClusters(forma: List[np.ndarray], clusters_n=6, seed=None,
                               clusters_iters=600, distance=5, fliped_y=False,figure_sep=None):
     figure_sep = figure_sep or 0.5
     pointgrid = fill_geometrys_with_points(forma, distance, figure_sep=figure_sep, fliped_y=fliped_y)
-    print(f"{len(pointgrid)} points created inside geometry")
     if len(pointgrid) < clusters_n:
         print("Not enough points in pointgrid")
         return None, None, None
