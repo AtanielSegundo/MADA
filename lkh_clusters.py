@@ -5,6 +5,7 @@ from numba import njit
 import numpy as np
 import lkh
 from typing import Tuple,List
+from tqdm import tqdm
 from core.visualize._2d import SlicesPlotter
 from commons.utils.clipper import readPathSVG
 from kmeans_tests import generatePointsAndClusters,fill_geometrys_with_points
@@ -591,7 +592,7 @@ if __name__ == "__main__":
     # print(generatePathOpenClusters(6,forma,DISTANCE,seed=45,save_fig_path="outputs/open/test.png"))
     # print(generatePathCHOpenClusters(6,forma,DISTANCE,seed=45,save_fig_path="outputs/open_ch/test.png"))
     print(generateCHRaw(6,forma,DISTANCE,seed=45,save_fig_path="outputs/ch_raw/test.png")) 
-    print(generatePathRaw(6,forma,DISTANCE,seed=45,save_fig_path="outputs/raw/test.png"))
+    print(generatePathRaw(6,forma,DISTANCE,seed=45,save_fig_path="outputs/raw/test.2png"))
     exit()
 
     grid, pred, centers = generatePointsAndClusters(forma, clusters_n=CLUSTER_N, distance=DISTANCE,figure_sep=BORDERS_DISTANCE,seed=SEED)
@@ -611,7 +612,6 @@ if __name__ == "__main__":
 
     plotter = SlicesPlotter([None,forma],tile_direction='horizontal')
     plotter.set_random_usable_colors(CLUSTER_N)
-    from tqdm import tqdm
     total_lenght = 0
     for idx, cluster in tqdm(enumerate(grid_clusters), total=len(grid_clusters), desc="Processing Clusters"):
         print(" ")
