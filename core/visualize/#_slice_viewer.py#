@@ -1,0 +1,113 @@
+import numpy as np
+from scipy.spatial import Delaunay
+import pyglet
+from pyglet.gl import *
+
+class SliceViewer(pyglet.window.Window):
+    def __init__(self, slices: list[list[np.ndarray]], width=1280, height=720):
+        super(SliceViewer, self).__init__(width=width, height=height, resizable=True)
+        self.slices = slices
+        self.rx, self.ry, self.rz = 0, 0, 0  
+        self.zoom = -100          
+        self.setup_opengl()
+
+    def setup_opengl(self):
+        
+        glEnable(GL_DEPTH_TEST)
+        
+        
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        
+        
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+
+        
+        light_pos = (1.0, 1.0, 1.0, 0.0)
+        glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat * 4)(*light_pos))
+
+        
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(0.8, 0.8, 0.8, 1.0))  
+        glLightfv(GL_LIGHT0, GL_SPECULAR, (GLfloat * 4)(1.0, 1.0, 1.0, 1.0))  
+
+        
+        glClearColor(1, 1, 1, 1)
+
+        
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, (GLfloat * 4)(0.5, 0.5, 0.5, 1.0))  
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (GLfloat * 4)(0.8, 0.8, 0.8, 1.0))  
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.0)  
+
+    def on_draw(self):
+        self.clear()
+        glLoadIdentity()
+
+        
+        glTranslatef(0, 0, self.zoom)
+        glRotatef(self.rx, 1, 0, 0)  
+        glRotatef(self.ry, 0, 1, 0)  
+        glRotatef(self.rz, 0, 0, 1)  
+
+        
+        for slice_3d_list in self.slices:
+            for slice_3d in slice_3d_list:
+                self.draw_slice(slice_3d)
+
+    def draw_slice(self, slice_3d):
+        """Triangulate the 2D slice and render it as a 3D surface with normals and lighting."""
+        
+        points_2d = slice_3d[:, :2]  
+        tri = Delaunay(points_2d)
+
+        
+        glBegin(GL_TRIANGLES)
+        for simplex in tri.simplices:
+            
+            v0, v1, v2 = slice_3d[simplex]
+
+            
+            normal = self.compute_normal(v0, v1, v2)
+            glNormal3f(*normal)
+
+            
+            glVertex3f(*v0)
+            glVertex3f(*v1)
+            glVertex3f(*v2)
+        glEnd()
+
+    def compute_normal(self, v0, v1, v2):
+        """Compute the normal vector for a triangle defined by vertices v0, v1, and v2."""
+        
+        vec1 = v1 - v0
+        vec2 = v2 - v0
+
+        
+        normal = np.cross(vec1, vec2)
+
+        
+        normal /= np.linalg.norm(normal)
+
+        return normal
+
+    def on_resize(self, width, height):
+        glViewport(0, 0, width, height)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(65.0, width / float(height), 0.1, 1000.0)
+        glMatrixMode(GL_MODELVIEW)
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        """Handle mouse dragging for rotating the view."""
+        
+        if buttons & pyglet.window.mouse.LEFT:
+            self.ry += dx * 0.5  
+            self.rx -= dy * 0.5  
+        
+        
+        if buttons & pyglet.window.mouse.RIGHT:
+            self.rz += dx * 0.5  
+
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        """Handle mouse scrolling for zooming in/out."""
+        self.zoom += scroll_y * 5

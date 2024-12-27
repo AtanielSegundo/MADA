@@ -6,7 +6,7 @@ import shutil
 from typing import Tuple,List
 from core.geometry import nthgone, CLOCKWISE
 from core.visualize._2d import SlicesPlotter
-from commons.utils.clipper import readPathSVG
+from core.clipper import readPathSVG
 from kmeans_tests import generatePointsAndClusters
 from tsptests import compute_distance_matrix_numba_parallel,generateGreedyPath,sort_points_up_right,compute_angle_delta_mean
 from lkh_clusters import writeDistanceMatrixProblemFile,writeInitialTourFile,writeDistanceMatrixProblemFile,\

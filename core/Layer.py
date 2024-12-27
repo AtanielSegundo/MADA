@@ -1,6 +1,6 @@
 import numpy as np
 from core.transform import geometrys_from_txt_nan_separeted
-from commons.utils.clipper import readPathSVG
+from core.clipper import readPathSVG
 from core.slicing import getSliceStl
 
 # format : (Handlers,is_y_flipped)

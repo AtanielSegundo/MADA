@@ -1,11 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
-from core.visualize import ShowGeometrys
-from commons.utils.clipper import offsetPaths
-from gridtests import generate_square_box_by_lenght, online_mean, center_point, is_polygon_counterclockwise
-from copy import deepcopy
-import numpy as np
 import freetype as ftp
-
+import numpy as np
 
 def text2Image(text, img_size, font_size, font):
     im = Image.new("L", (img_size, img_size), color=0)
@@ -58,20 +53,3 @@ def str2Polygons(string: str, font, font_size=13, scale=128, _return_offsets=Fal
     if _return_offsets:
         return polygons, total_offset_x+font_size, total_offset_y-3*font_size/2
     return polygons
-
-
-def getPolygonsCenter(polygons):
-    center = np.mean(polygons[0], axis=0)
-    for idx, geometry in enumerate(polygons[1:]):
-        center, _ = online_mean(center_point(geometry), center, idx+1)
-    return center
-
-
-if __name__ == "__main__":
-    test_font = "assets\\ttf\\arial.ttf"
-    # text2Image("B", 640, 100, test_font).show()
-    waam_p,offsetx,offsety = str2Polygons("WAAM", test_font, font_size=32,_return_offsets=True)
-    square = generate_square_box_by_lenght(max(abs(offsetx),abs(offsety)),getPolygonsCenter(waam_p))
-    assemble = waam_p+[square]
-    offsets  = offsetPaths(assemble,-20,2)
-    ShowGeometrys([assemble , offsets], spliter=2)

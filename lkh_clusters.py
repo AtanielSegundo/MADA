@@ -7,7 +7,7 @@ import lkh
 from typing import Tuple,List
 from tqdm import tqdm
 from core.visualize._2d import SlicesPlotter
-from commons.utils.clipper import readPathSVG
+from core.clipper import readPathSVG
 from kmeans_tests import generatePointsAndClusters,fill_geometrys_with_points
 from tsptests import compute_distance_matrix_numba_parallel,compute_angle_delta_mean,sort_points_up_right
 
@@ -576,12 +576,12 @@ def generatePathCHOpenClusters(n_clusters:int,forma:List[np.ndarray],distance:fl
 if __name__ == "__main__":
     LKH_PATH = "LKH.exe"
     SEED     = None
-    DISTANCE = 5
+    DISTANCE = 10
     BORDERS_DISTANCE = 0
     CLUSTER_N = 16
     LKH_RUNS = 2
-    MERGE_CLUSTERS  = False
-    MERGE_TOLERANCE = 0.4 
+    MERGE_CLUSTERS = False
+    MERGE_TOLERANCE = 0.4
     FILE = "assets/svg/rabbit.svg"
 
     rabbit = readPathSVG(FILE, scale=1)

@@ -1,8 +1,8 @@
 import numpy as np
 import pyclipr.pyclipr
-from commons.clipperutils import offsetPaths
-from commons.figutils import rotate_180,flip_horizontal
-from core.geometry import ShowGeometrys,nthgone,CLOCKWISE
+from core.clipper import offsetPaths
+from core.geometry import rotate_180,flip_horizontal,nthgone
+from core.visualize import ShowGeometrys
     
 def generateBridge(dim_size:float) -> np.ndarray :
     square = nthgone(4,dim_size) 
@@ -44,29 +44,3 @@ def offsetRedStuff(DISTANCE=-40,ITER=1,show=False) :
     offseted = offsetPaths([redStuff],DISTANCE,ITER)
     if show: ShowGeometrys([offseted],spliter=1)
     return redStuff,offseted
-
-if __name__ == "__main__" :
-    #offsetSVG("assets/rabbit.svg",HOLE_RAY=0)
-
-    #rabbit,hole,offsets = offsetSVG("assets/rabbit.svg",HOLE_RAY=40,scale=1,show=True)
-    #fig = np.concatenate((rabbit,np.array([[np.nan,np.nan]]),hole), axis=0)
-    #np.savetxt("assets/rabbit_hole.txt",fig,delimiter=",")
-    #np.savetxt("assets/offsets_hole.txt",fold_3d_array_to_2d_using_NaN_separator(offsets),delimiter=",")
-
-    #rabbit,hole,offsets = offsetSVG("assets/rabbit.svg",HOLE_RAY=0,scale=1,show=True)
-    #np.savetxt("assets/rabbit.txt",rabbit,delimiter=",")
-    #np.savetxt("assets/offsets.txt",fold_3d_array_to_2d_using_NaN_separator(offsets),delimiter=",")
-    #bridge,offseted   = offsetBridge(DISTANCE=-1,ITER=3,show=True)
-    #
-    #np.savetxt("assets/bridge.txt",bridge,delimiter=",")
-    #np.savetxt("assets/bridge_offset.txt",fold_3d_array_to_2d_using_NaN_separator(offseted),delimiter=",")
-
-    #redstuff,offseted = offsetRedStuff(DISTANCE=-40,ITER=1,show=True)
-    #np.savetxt("assets/global_loop.txt",redstuff,delimiter=",")
-    #np.savetxt("assets/global_loop_offset.txt",fold_3d_array_to_2d_using_NaN_separator(offseted),delimiter=",")
-
-    circle = nthgone(10_000,10)
-    hole  = nthgone(10_000,1,dir=CLOCKWISE)
-    offsets = offsetPaths([circle.copy(),hole.copy()],-1,40)
-    ShowGeometrys([[circle,hole],offsets])
-    # offsetRedStuff(DISTANCE=-10,ITER=40)

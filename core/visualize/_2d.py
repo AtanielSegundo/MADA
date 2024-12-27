@@ -109,26 +109,31 @@ class SlicesPlotter:
 
     def draw_fig_title(self, title:str):
         self.fig.suptitle(title, fontsize=22, weight='bold')
+        return self
     
     def draw_titles(self, titles: List[str]):
         assert len(titles) == self.slices_len
         for ii in range(self.slices_len):
             canvas = self.axs[ii]
             canvas.set_title(titles[ii])
-
+        return self
+    
     def set_background_colors(self, bg_colors: List[str]):
         assert len(bg_colors) == self.slices_len
         for ii in range(self.slices_len):
             canvas = self.axs[ii]
             canvas.set_facecolor(bg_colors[ii])
+        return self
 
     def set_usable_colors(self,colors:List[str]):
         if all([(color in _AVAILABLE_COLORS) for color in colors]):
             self.usable_colors = colors
+        return self
 
     def set_random_usable_colors(self,amount:int):
          r_idxs = np.random.choice(_AVAILABLE_IDXS, amount, replace=False)
          self.usable_colors = np.array(_AVAILABLE_COLORS)[r_idxs]
+         return self
 
     IDX = int
     def draw_points(self,points:List[np.ndarray],markersize=2,
@@ -146,6 +151,7 @@ class SlicesPlotter:
                         canvas.plot(point[0], point[1], 'o', markersize=(markersize+edgesize), color=edgecolor) 
                     color = self.usable_colors[c_map[idx]] if c_map is not None else self.usable_colors[0]
                     canvas.plot(point[0], point[1], 'o', markersize=markersize, color=color)
+        return self
 
     def draw_vectors(self,points:List[np.ndarray],vectors_map:List[np.ndarray],
                      thick:int=1,color='red'):
@@ -163,6 +169,7 @@ class SlicesPlotter:
                         cx,cy = (thick/2)*np.cos(a) , (thick/2)*np.sin(a)  
                         canvas.arrow(x0+cx, y0+cy, (x1-x0)-2.5*cx, (y1-y0)-2.5*cy,
                                      width=thick/4,head_width=thick,head_length=thick, color=color)
+        return self
 
 
     def draw_slices(self, marker_size=1, line_kind="o-", bg_color='white'):
@@ -172,6 +179,7 @@ class SlicesPlotter:
                 for slice in self.slices[ii]:
                     canvas.plot(slice[:, 0], slice[:, 1], line_kind, markersize=marker_size)
         self.slices_drawed = True
+        return self
 
     def show(self):
         if not self.slices_drawed:
