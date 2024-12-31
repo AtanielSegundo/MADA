@@ -34,7 +34,11 @@ def update_ctx_with_params(ctx_locals, params):
     for param in params:
         if "=" in param:
             var_name, var_val = param.split("=")
-            setattr(ctx_locals, var_name, eval(var_val))
+            try:
+                val = eval(var_val)
+            except:
+                val = var_val
+            setattr(ctx_locals, var_name, val)
     return ctx_locals
 
 
