@@ -3,13 +3,14 @@ desired_function = ""
 
 HELP_FUNCTION_NAMES = ["help", "-h", "--h"]
 
-
 class CTX:
     def __init__(self):
         pass
 
 
 ctx = CTX()
+
+help_asked = lambda params : any(param in HELP_FUNCTION_NAMES for param in params) 
 
 
 def check_params(*opts):
@@ -45,7 +46,7 @@ def test_grid(*params):
     ctx.iter = 2
     ctx.hole = 60
     update_ctx_with_params(ctx, params)
-    if any([(param in HELP_FUNCTION_NAMES) for param in params]):
+    if help_asked(params):
         show_opts_help(ctx)
     else:
         rabbit, hole, _ = offsetSVG("assets/svg/rabbit.svg", DISTANCE=-
@@ -88,7 +89,7 @@ def test_clipper(*params):
         np.savetxt("assets/global_loop.txt", redstuff, delimiter=",")
         np.savetxt("assets/global_loop_offset.txt",
                    fold_3d_array_to_2d_using_NaN_separator(offseted), delimiter=",")
-    if any([(param in HELP_FUNCTION_NAMES) for param in params]):
+    if help_asked(params):
         show_opts_help()
 
 
@@ -97,21 +98,12 @@ def test_offset_txt(*params):
     from core.clipper import offsetTXT
     import os
     import numpy as np
-
-    def create_two_semi_circles(ray: float, separation: float, c_points=1000):
-        semi_circle_1 = nthgone(c_points, ray=ray)[(c_points):]
-        semi_circle_2 = nthgone(c_points, ray=ray)[0:(c_points)]
-        semi_circle_1 = np.array(
-            [[semi_circle_1[idx % len(semi_circle_1)]] for idx in range(len(semi_circle_1)+1)])
-        semi_circle_2 = np.array(
-            [[semi_circle_2[idx % len(semi_circle_2)]] for idx in range(len(semi_circle_2)+1)])
-        return [semi_circle_1, semi_circle_2]
     ctx.iteracoes = 40
     ctx.offset = -2
     ctx.path = "assets/txt/formas"
     ctx.precisao = 1e3
     update_ctx_with_params(ctx, params)
-    if any([(param in HELP_FUNCTION_NAMES) for param in params]):
+    if help_asked(params):
         show_opts_help(ctx)
     else:
         for arquivo in os.listdir(ctx.path):
@@ -133,7 +125,7 @@ def test_ttf(*params):
     ctx.iter = 2
     update_ctx_with_params(ctx, params)
 
-    if any([(param in HELP_FUNCTION_NAMES) for param in params]):
+    if help_asked(params):
         show_opts_help(ctx)
     else:
         waam_p, offsetx, offsety = str2Polygons(
@@ -160,7 +152,7 @@ def test_kmeans(*params):
         ctx.scale = 60
         update_ctx_with_params(ctx, params)
         ctx.output = f"outputs/d_{ctx.distance}_cn_{ctx.cluster_n}"
-        if any([(param in HELP_FUNCTION_NAMES) for param in params]):
+        if help_asked(params):
             show_opts_help(ctx)
             return
         else:
@@ -177,7 +169,7 @@ def test_kmeans(*params):
         ctx.path = "assets/txt/formas"
         update_ctx_with_params(ctx, params)
         ctx.output = f"outputs/d_{ctx.distance}_cn_{ctx.cluster_n}"
-        if any([(param in HELP_FUNCTION_NAMES) for param in params]):
+        if help_asked(params):
             show_opts_help(ctx)
             return
         else:
@@ -195,7 +187,7 @@ def test_kmeans(*params):
         ctx.path = "assets/3d"
         update_ctx_with_params(ctx, params)
         ctx.output = f"outputs/d_{ctx.distance}_cn_{ctx.cluster_n}"
-        if any([(param in HELP_FUNCTION_NAMES) for param in params]):
+        if help_asked(params):
             show_opts_help(ctx)
             return
         else:
@@ -211,8 +203,117 @@ def test_kmeans(*params):
                 _plt.set_random_usable_colors(ctx.cluster_n)
                 _plt.draw_points([grid],colors_maps=[pred]).draw_points([centers],colors_maps=[list(range(0,ctx.cluster_n))],edgesize=3).save(os.path.join(ctx.output,file_name))
                 print()
-    if any([(param in HELP_FUNCTION_NAMES) for param in params]):
+    if help_asked(params):
         show_opts_help()
+
+
+def test_slm(*params):
+    from core.visualize import showStl 
+    from core.slicing import sliceStlVector
+    ctx.path = ""
+    ctx.z_step = 1
+    ctx.n_slices = 100
+    ctx.scale = 1.0 
+    ctx.show = False
+    model_params = {
+        "custom": {"path": "assets/3d/bolsonaro002.stl", "z_step": 1, "n_slices": 100, "scale": 1.0},
+        "bonnie": {"path": "assets/3d/bonnie.stl", "z_step": 2, "n_slices": 200, "scale": 1.0},
+        "truss":  {"path": "assets/3d/truss_.stl", "z_step": 1, "n_slices": 100, "scale": 1.0},
+        "Foice":  {"path": "assets/3d/Petro_foice_c.stl", "z_step": 1, "n_slices": 100, "scale": 1.0},
+        "Flange": {"path": "assets/3d/flange16furos.stl", "z_step": 2.5, "n_slices": 20, "scale": 1.0},
+        "frame_guide": {"path": "assets/3d/frameGuide.stl", "z_step": 4, "n_slices": 10, "scale": 1.0},
+    }
+    if help_asked(params):
+        show_opts_help(ctx)
+        return
+    for model, m_params in model_params.items():
+        if check_params(model):
+            ctx.path = m_params["path"]
+            ctx.z_step = m_params["z_step"]
+            ctx.n_slices = m_params["n_slices"]
+            ctx.scale = m_params["scale"]
+            update_ctx_with_params(ctx, params)
+            if ctx.show:
+                showStl(ctx.path)
+            sliceStlVector(ctx.path, n_slices=ctx.n_slices, z_step=ctx.z_step, scaleFactor=ctx.scale)
+            return
+    if help_asked(params):
+        show_opts_help(ctx)
+
+def test_tsp(*params):
+    ctx.path = "assets/txt/formas/rabbit.txt"
+    ctx.distance = 10
+    ctx.cluster_n = 2
+    ctx.iterations = 20
+    update_ctx_with_params(ctx, params)
+    if help_asked(params):
+        show_opts_help(ctx)
+        return
+    else:
+        pass
+
+def test_path_gen(*params):
+    from core.Layer import Layer
+    from core.geometry import fill_geometrys_with_points
+    from core.visualize import SlicesPlotter
+    from core.Grid import compute_distance_matrix_numba_parallel
+    from core.Tour import generateDummyTour,generateCH,generateCH_with_dummy
+    ctx.file = "assets/svg/rabbit.svg"
+    ctx.seed = 777
+    ctx.z = 10
+    ctx.scale = 0.5
+    ctx.distance = 5
+    ctx.borders = 0
+    ctx.end_point = 2
+    update_ctx_with_params(ctx, params)
+    if help_asked(params):
+        show_opts_help(ctx)
+        return
+    else:
+        layer = Layer.From(ctx.file, scale=ctx.scale, z=ctx.z)
+        forma = layer.data
+        _plt = SlicesPlotter([None,None,None],tile_direction="horizontal")
+        _plt.set_random_usable_colors(6)
+        _plt.set_background_colors(['black','black','black'])
+        grid = fill_geometrys_with_points(forma,delta=ctx.distance,figure_sep=ctx.borders,fliped_y=layer.is_y_flipped)
+        path_dummy = generateDummyTour(0,ctx.end_point, len(forma[0])+1)
+        path_ch_dummy = generateCH_with_dummy(grid, 0,ctx.end_point)
+        path_ch = generateCH(grid)
+        _plt.draw_vectors([grid,grid,grid],[path_ch,path_dummy[:-1],path_ch_dummy[:-1]])
+        _plt.draw_points([[grid[path_ch[0]], grid[path_ch[-1]]],
+                      [grid[path_dummy[:-1][0]], grid[path_dummy[:-1][-1]]],
+                      [grid[path_ch_dummy[:-1][0]], grid[path_ch_dummy[:-1][-1]]]],
+                     colors_maps=[[0,1],[0,1],[0,1]])
+        _plt.show()
+
+def test_off_slices(*params):
+    from core.slicing import sliceStlVector
+    from core.clipper import offsetPaths
+    ctx.n_slices = 20
+    ctx.iterations = 50
+    ctx.z_step = 1 
+    ctx.off_dist = None
+    ctx.mode = "3d"
+    ctx.path = ""
+    ctx.scale = 1.0
+    update_ctx_with_params(ctx, params)
+    stlSlicer = lambda path,mode,**kwargs : sliceStlVector(path,d2_mode=(True if mode=="2d" else False),**kwargs)
+    if ctx.off_dist is None :
+        offseter = None
+    else : 
+        offseter = lambda gArr : offsetPaths(gArr,-ctx.off_dist,ctx.iterations)
+    if check_params("custom"):
+        stlSlicer(ctx.path,ctx.mode,n_slices=ctx.n_slices,z_step=ctx.z_step,scaleFactor=ctx.scale,offset_fn=offseter)
+    if check_params("petro"):
+        ctx.path = "assets/3d/Petro_foice.stl"
+        stlSlicer(ctx.path,ctx.mode,n_slices=ctx.n_slices,z_step=ctx.z_step,scaleFactor=ctx.scale,offset_fn=offseter)
+    if check_params("truss"):
+        ctx.path = "assets/3d/truss_.stl"
+        stlSlicer(ctx.path,ctx.mode,n_slices=ctx.n_slices,z_step=ctx.z_step,scaleFactor=ctx.scale,offset_fn=offseter)
+    if help_asked(params):
+        show_opts_help(ctx)
+        return
+
 
 if __name__ == "__main__":
     from sys import argv

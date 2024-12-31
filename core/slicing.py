@@ -5,15 +5,15 @@ from typing import List
 from os.path import basename
 from .visualize import ShowGeometrys, showSlices3d_matplot
 
-def getSliceStl(stl_path:str,z:float,
+def getSliceStl(stl_path:str,z:float=1,
                 origin: List[float] = [5.0, 10.0, 0.0],
                 rotation: np.ndarray[float] = np.array([0, 0, 30]),
-                scaleFactor: float = 2.0,
+                scale: float = 2.0,
                 dropToPlataform: bool = True,) :
     solidPart = pyslm.Part(basename(stl_path).split(".")[0])
     solidPart.setGeometry(stl_path)
     # Transform the part: Rotate, translate, scale, and drop to platform
-    solidPart.scaleFactor = scaleFactor
+    solidPart.scaleFactor = scale
     solidPart.origin = origin
     solidPart.rotation = rotation
     if dropToPlataform:

@@ -28,7 +28,7 @@ def offsetPaths(Paths: List[np.ndarray], distance: float, iter: int, precisao: f
     return offsetedFlat[no_offseted_polygons_len:]
 
 
-def readPathSVG(svg_path: str, scale=1):
+def readPathSVG(svg_path: str, scale=1, **kwargs):
     tree = ET.parse(svg_path)
     root = tree.getroot()
     path_element = root.find('.//{http://www.w3.org/2000/svg}path')
