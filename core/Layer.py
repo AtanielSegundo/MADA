@@ -2,6 +2,7 @@ import numpy as np
 from core.transform import geometrys_from_txt_nan_separeted
 from core.clipper import readPathSVG
 from core.slicing import getSliceStl
+from os.path import basename
 
 # format : (Handlers,is_y_flipped)
 SUPPORTED = {"svg": (lambda p,**k : [readPathSVG(p,**k)], False),
@@ -11,18 +12,19 @@ SUPPORTED = {"svg": (lambda p,**k : [readPathSVG(p,**k)], False),
 
 class Layer:
     #data is an array with shape (N,2)
-    def __init__(self,data:np.ndarray,is_y_flipped=False,**kwargs):
+    def __init__(self,data:np.ndarray,tag:str,is_y_flipped=False,**kwargs):
         for k,val in kwargs.items():
             setattr(self,k,val)
         self.is_y_flipped = is_y_flipped
         self.data = data
+        self.tag = tag
     @classmethod
     def From(self,path:str,**kwargs):
         extension = path.split(".")[-1]
         if (_tuple:= SUPPORTED.get(extension,None)):
             handler,is_y_flipped = _tuple
             data = handler(path,**kwargs)
-            return Layer(data,is_y_flipped,**kwargs)
+            return Layer(data,basename(path),is_y_flipped,**kwargs)
 
 if __name__ == "__main__":
     l = Layer.From("assets\\svg\\rabbit.svg")

@@ -142,7 +142,7 @@ def test_ttf(*params):
 
 
 def test_kmeans(*params):
-    from core.Grid import generatePointsAndClusters
+    from core.Grid.operations import generatePointsAndClusters
     from core.visualize import SlicesPlotter
     from core.geometry import generate_square_box_by_lenght,getPolygonsCenter
     import os
@@ -260,7 +260,6 @@ def test_path_gen(*params):
     from core.Layer import Layer
     from core.geometry import fill_geometrys_with_points
     from core.visualize import SlicesPlotter
-    from core.Grid import compute_distance_matrix_numba_parallel
     from core.Tour import generateDummyTour,generateCH,generateCH_with_dummy
     ctx.file = "assets/svg/rabbit.svg"
     ctx.seed = 777

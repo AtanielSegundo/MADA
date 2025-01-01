@@ -23,6 +23,14 @@ def geometrys_from_txt_nan_separeted(txt_path:str,sep=" ",**kwargs) -> np.ndarra
             geometrys.append(raw_geometrys[ii+1:])
     return geometrys
 
+
+def sort_points_up_right(points: np.ndarray) -> np.ndarray:
+    # Sort points by y descending and then by x ascending
+    _remap = np.lexsort((-points[:, 1], points[:, 0]))
+    sorted_points = points[_remap]
+    return _remap, sorted_points
+
+
 def calculate_elliptical_arc(start_point, arc_params):
     """Approximates the points along an elliptical arc."""
     rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, end_x, end_y = arc_params
