@@ -73,20 +73,22 @@ class LKH(Solver):
         self.distance_matrix_file = None
         self.initial_tour_file = None
 
-    def setDistanceMatrix(self,points:np.ndarray,start_end:Tuple[int, int]=None,**kwargs):
-        self.distance_matrix_file = os.path.join(self.temporary_folder,"points_distance_matrix_file.txt")
+    def setDistanceMatrix(self,points:np.ndarray,suffix:str="",start_end:Tuple[int, int]=None,**kwargs):
+        file_name = "points_distance_matrix_file_"+suffix
+        self.distance_matrix_file = os.path.join(self.temporary_folder,f"{file_name}.txt")
         distance_matrix = compute_distance_matrix_numba_parallel(points,points)
         writeDistanceMatrixProblemFile(distance_matrix,self.distance_matrix_file,start_end)
 
-    def setInitialTourFile(self,path:np.ndarray,**kwargs):
-        self.initial_tour_file = os.path.join(self.temporary_folder,"initial_tour_file.txt")
+    def setInitialTourFile(self,path:np.ndarray,suffix:str="",**kwargs):
+        file_name = "initial_tour_file_"+suffix
+        self.initial_tour_file = os.path.join(self.temporary_folder,f"{file_name}.txt")
         writeInitialTourFile(path,self.initial_tour_file)
         
-    def solve(self,points:np.ndarray,runs:int=None,seed:int=None,initial_path:np.ndarray=None,start_end:Tuple[int, int]=None,**kwargs) -> Tuple[int,Tour]:
+    def solve(self,points:np.ndarray,runs:int=None,seed:int=None,initial_path:np.ndarray=None,start_end:Tuple[int, int]=None,suffix:str="",**kwargs) -> Tuple[int,Tour]:
         assert points.shape[1] == 2, "Points must be a 2D array with shape (len, 2)"
-        self.setDistanceMatrix(points,start_end)
+        self.setDistanceMatrix(points,suffix,start_end)
         if initial_path is not None:
-            self.setInitialTourFile(initial_path)
+            self.setInitialTourFile(initial_path,suffix)
             lenght,best_path = custom_lkh_solve(self.lkh_exe, 
                                initial_tour_file=self.initial_tour_file, 
                                problem_file=self.distance_matrix_file, 

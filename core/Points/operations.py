@@ -3,6 +3,12 @@ from numba import njit,prange
 import numpy as np
 
 
+def sort_points_up_right(points: np.ndarray) -> np.ndarray:
+    # Sort points by y descending and then by x ascending
+    _remap = np.lexsort((-points[:, 1], points[:, 0]))
+    sorted_points = points[_remap]
+    return _remap, sorted_points
+
 @njit(cache=True, parallel=True)
 def compute_distance_matrix_numba_parallel(pointsA,pointsB):
     ''' rows: idxs points A, columns: idxs points B '''

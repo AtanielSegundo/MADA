@@ -2,7 +2,6 @@ from typing import List, Tuple
 from sklearn.cluster import KMeans
 from core.geometry import fill_geometrys_with_points
 from core.Layer import Layer
-from core.TSP.strategy import Strategy
 import numpy as np
 
 def generatePointsAndClusters(forma: List[np.ndarray], clusters_n=6, seed=None,
@@ -38,33 +37,39 @@ class Cluster:
         self.remap_idxs = []
 
 class Clusters:
-    def __init__(self,set,centers):
+    def __init__(self,set,centers=None):
         self.set = set
-        self.n_clusters = centers.shape[0]
-        self.centers = None
+        self.centers = centers
+        self.n_clusters = centers.shape[0] if centers is not None else None
         
 
-def generateGridAndClusters(layer: Layer, strategy: Strategy, gen_clusters=True) -> Tuple[Grid, List[Cluster]]:
+def generateGridAndClusters(layer: Layer, strategy, gen_clusters=True) -> Tuple[Grid, List[Cluster]]:
     forma = layer.data
-    points, pred, centers = generatePointsAndClusters(
-        forma,
-        clusters_n=strategy.n_cluster,
-        distance=strategy.distance,
-        figure_sep=strategy.border_distance,
-        seed=strategy.seed,
-        fliped_y=layer.is_y_flipped
-    )
-    
-    if points is None or pred is None:
-        return Grid(np.empty((0, 2))), []
-    
     grid_clusters = None
-    if gen_clusters :
+    if not gen_clusters:
+        points = fill_geometrys_with_points(forma, strategy.distance, figure_sep=strategy.border_distance, fliped_y=layer.is_y_flipped)
+        centers = None
+    else:
+        points, pred, centers = generatePointsAndClusters(
+            forma,
+            clusters_n=strategy.n_cluster,
+            distance=strategy.distance,
+            figure_sep=strategy.border_distance,
+            seed=strategy.seed,
+            fliped_y=layer.is_y_flipped
+        )
+        print("POINTS STUFF")
+        print(centers)
+        print("AFTER STUFF")
+        if points is None or pred is None:
+            print("STRANGE SPOT")
+            return Grid(np.empty((0, 2))), []
+            
         grid_clusters = [Cluster() for _ in range(strategy.n_cluster)]
         for cluster_idx in range(strategy.n_cluster):
             mask = pred == cluster_idx
             cluster_points = points[mask]
             grid_clusters[cluster_idx].cluster = cluster_points
-            grid_clusters[cluster_idx].remap_idxs = np.flatnonzero(mask).tolist()
-            
+            grid_clusters[cluster_idx].remap_idxs = np.flatnonzero(mask).tolist()            
+
     return Grid(points), Clusters(grid_clusters,centers)

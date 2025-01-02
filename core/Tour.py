@@ -2,7 +2,7 @@ import numpy as np
 from core.transform import sort_points_up_right
 from numba import njit
 from core.TSP.solver import Solver
-from core.Points.Grid import Clusters
+from core.Points.Grid import Clusters,Cluster
 from core.Points.operations import compute_distance_matrix_numba_parallel
 from typing import Type
 
@@ -17,40 +17,99 @@ class Tour:
 class TourEnd:
     def __init__(self,temporary_folder:str):
         self.clusters_big_path = None
+        self.clusters_centers_tour = None
         self.temporary_folder  = temporary_folder
         self.relative_lenght = 0
+        self.current_start_end_idx = 0
+        self.start_end = ...
     
     def set_clusters_big_path(self,clusters:Clusters,Solver:Type[Solver],runs:int=2):
         pass
-class openEnd(TourEnd):
-    def __init__(self, temporary_folder):
-        super().__init__(temporary_folder)
+    
+    def get_current_start_end(self,clusters:Clusters):
+        pass
+    
+    def remap_tour_path(self,tour:Tour):
+        tour.path = tour.path      
 
-    def set_clusters_big_path(self, clusters, Solver, runs = 2):
-        _remap,centers = sort_points_up_right(clusters.centers)
-        tsp_solver = Solver(self.temporary_folder)
-        _,centers_tour = tsp_solver.solve(centers,runs=runs)
-        centers_tour.remap(_remap)
-        # Determinando o ponto de inicio e fim por clusters mais proximos
-        # Utiliza os indices do point grid para poupar espaço
-        # [[0,1],[2,3]]
-        clusters_total_lenght = 0
-        self.clusters_big_path = [[0,1]]
-        for ii in range(centers_tour.len - 1) :
-            cluster = clusters.set[centers_tour.path[ii]]
-            next_cluster = clusters.set[centers_tour.path[ii+1]]
-            distance_matrix = compute_distance_matrix_numba_parallel(next_cluster.cluster,cluster.cluster)
-            start_next_cluster,end_current_cluster = np.unravel_index(np.argmin(distance_matrix), distance_matrix.shape)
-            clusters_total_lenght += distance_matrix[start_next_cluster,end_current_cluster] 
-            self.clusters_big_path[ii][1] = end_current_cluster
-            self.clusters_big_path.append([start_next_cluster,1])
-        self.relative_lenght += clusters_total_lenght
 
 class closeEnd(TourEnd):
     def __init__(self, temporary_folder):
         super().__init__(temporary_folder)
     def set_clusters_big_path(self, clusters, Solver, runs = 2):
         return super().set_clusters_big_path(clusters, Solver, runs)
+    def get_current_start_end(self, clusters):
+        self.start_end = None
+        if clusters.centers is None and clusters.set is None:
+            self.current_start_end_idx = None
+        else:
+            self.current_start_end_idx += 1
+            if self.current_start_end_idx >= clusters.n_clusters:
+                self.current_start_end_idx = None
+        
+            
+
+class openEnd(TourEnd):
+    def __init__(self, temporary_folder):
+        super().__init__(temporary_folder)
+
+    def set_clusters_big_path(self, clusters:Clusters, Solver, runs = 2):
+        if clusters.centers is None and clusters.set is None:
+            self.start_end = None
+        else:
+            _remap,centers = sort_points_up_right(clusters.centers)
+            tsp_solver = Solver(self.temporary_folder)
+            _,centers_tour = tsp_solver.solve(centers,runs=runs)
+            centers_tour.remap(_remap)
+            # Determinando o ponto de inicio e fim por clusters mais proximos
+            # Utiliza os indices do point grid para poupar espaço
+            # [[0,1],[2,3]]
+            clusters_total_lenght = 0
+            self.clusters_big_path = [[0,1]]
+            for ii in range(centers_tour.len - 1) :
+                cluster = clusters.set[centers_tour.path[ii]]
+                next_cluster = clusters.set[centers_tour.path[ii+1]]
+                distance_matrix = compute_distance_matrix_numba_parallel(next_cluster.cluster,cluster.cluster)
+                start_next_cluster,end_current_cluster = np.unravel_index(np.argmin(distance_matrix), distance_matrix.shape)
+                clusters_total_lenght += distance_matrix[start_next_cluster,end_current_cluster] 
+                self.clusters_big_path[ii][1] = end_current_cluster
+                self.clusters_big_path.append([start_next_cluster,1])
+            self.relative_lenght += clusters_total_lenght
+            self.clusters_centers_tour = centers_tour
+    
+    def get_current_start_end(self,clusters:Clusters):
+        # GREEDY IDX => centers_tour.path
+        if self.current_start_end_idx is None:
+            self.start_end = None
+        elif self.start_end is None:
+            self.current_start_end_idx = None
+        else:
+            _center_idx = self.clusters_centers_tour.path[self.current_start_end_idx]
+            cluster:Cluster = clusters.set[_center_idx]
+            start_node, end_node = self.clusters_big_path[self.current_start_end_idx]
+            if start_node == end_node :
+                start_node = end_node-1 if end_node-1 > 0 else end_node+1
+            if start_node is not None and end_node is not None:
+                temp_ = cluster.remap_idxs[0] 
+                cluster.remap_idxs[0] = cluster.remap_idxs[start_node] 
+                cluster.remap_idxs[start_node] = temp_
+                temp_ = np.array([0,0])
+                temp_[0] = cluster.cluster[start_node][0]
+                temp_[1] = cluster.cluster[start_node][1]
+                cluster.cluster[start_node][0] = cluster.cluster[0][0] 
+                cluster.cluster[start_node][1] = cluster.cluster[0][1]
+                cluster.cluster[0][0] = temp_[0]
+                cluster.cluster[0][1] = temp_[1]
+            self.start_end = [0,end_node]
+            if end_node == 0:
+                self.start_end = [0,start_node]
+            self.current_start_end_idx += 1
+            if self.current_start_end_idx >= clusters.n_clusters:
+                self.current_start_end_idx = None
+    
+    def remap_tour_path(self,tour:Tour):
+        tour.path = tour.path[:-1]        
+
 
 @njit(cache=True)
 def generateCH(points):
