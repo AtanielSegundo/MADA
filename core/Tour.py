@@ -30,23 +30,27 @@ class TourEnd:
         pass
     
     def remap_tour_path(self,tour:Tour):
-        tour.path = tour.path      
+        pass  
 
 
 class closeEnd(TourEnd):
     def __init__(self, temporary_folder):
         super().__init__(temporary_folder)
     def set_clusters_big_path(self, clusters, Solver, runs = 2):
-        return super().set_clusters_big_path(clusters, Solver, runs)
+        if clusters.set is not None:
+            self.clusters_centers_tour = Tour(np.arange(clusters.n_clusters))
     def get_current_start_end(self, clusters):
         self.start_end = None
         if clusters.centers is None and clusters.set is None:
+            now_start_end_idx = 0
             self.current_start_end_idx = None
         else:
+            now_start_end_idx = self.current_start_end_idx 
             self.current_start_end_idx += 1
             if self.current_start_end_idx >= clusters.n_clusters:
                 self.current_start_end_idx = None
         
+        return now_start_end_idx,now_start_end_idx
             
 
 class openEnd(TourEnd):
@@ -74,19 +78,25 @@ class openEnd(TourEnd):
                 clusters_total_lenght += distance_matrix[start_next_cluster,end_current_cluster] 
                 self.clusters_big_path[ii][1] = end_current_cluster
                 self.clusters_big_path.append([start_next_cluster,1])
+            #print(self.clusters_big_path)
             self.relative_lenght += clusters_total_lenght
             self.clusters_centers_tour = centers_tour
+            #print(self.clusters_centers_tour.path)
     
     def get_current_start_end(self,clusters:Clusters):
         # GREEDY IDX => centers_tour.path
+        current_cluster_idx = 0
+        now_start_end_idx = 0
         if self.current_start_end_idx is None:
             self.start_end = None
         elif self.start_end is None:
             self.current_start_end_idx = None
         else:
-            _center_idx = self.clusters_centers_tour.path[self.current_start_end_idx]
-            cluster:Cluster = clusters.set[_center_idx]
+            now_start_end_idx = self.current_start_end_idx
+            current_cluster_idx = self.clusters_centers_tour.path[self.current_start_end_idx]
+            cluster:Cluster = clusters.set[current_cluster_idx]
             start_node, end_node = self.clusters_big_path[self.current_start_end_idx]
+            #print(current_cluster_idx," | ",start_node,end_node)
             if start_node == end_node :
                 start_node = end_node-1 if end_node-1 > 0 else end_node+1
             if start_node is not None and end_node is not None:
@@ -106,6 +116,7 @@ class openEnd(TourEnd):
             self.current_start_end_idx += 1
             if self.current_start_end_idx >= clusters.n_clusters:
                 self.current_start_end_idx = None
+        return current_cluster_idx,now_start_end_idx
     
     def remap_tour_path(self,tour:Tour):
         tour.path = tour.path[:-1]        
@@ -197,5 +208,4 @@ def generateCH_with_dummy(points, start_node, end_node):
         if path[k] == end_node:
             path[k], path[-2] = path[-2], path[k]
             break
-        
     return path

@@ -53,15 +53,12 @@ def rawGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple[Grid
     initial_heuristic_handler = strategy.initial_heuristic
     tsp_solver = solver(temporary_folder) 
     start_exec_time = time.time()
-
     tour_lenght = 0
     best_path  = None
-
     endType_manager.set_clusters_big_path(clusters, tsp_solver)
     while (endType_manager.current_start_end_idx is not None):
         endType_manager.get_current_start_end(clusters)
         suffix = f"_dm{(endType_manager.current_start_end_idx or 0)+1}"
-        #cluster:Cluster = clusters.set[endType_manager.current_start_end_idx]
         initial_tour_path = initial_heuristic_handler(grid.points)
         tour_lenght,best_tour = tsp_solver.solve(
                                 grid.points,
@@ -73,13 +70,11 @@ def rawGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple[Grid
                                 )
         endType_manager.remap_tour_path(best_tour)
         best_path = best_tour.path
-    
     end_exec_time = time.time()
     angle_delta_mean = compute_angle_delta_mean(grid.points,best_path)
     metrics = Metrics(end_exec_time-start_exec_time,
                       tour_lenght,
                       angle_delta_mean)
-    
     return grid,Tour(best_path),metrics
 
 
@@ -87,53 +82,123 @@ def clustersGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple
     temporary_folder = os.path.join(strategy.temp_dir,f"{tag}/clustersGenerator/")
     os.makedirs(temporary_folder,exist_ok=True)
     grid,clusters = generateGridAndClusters(layer,strategy)
-    print(clusters.centers)
     endType_manager:TourEnd = strategy.end_type(temporary_folder)
     initial_heuristic_handler = strategy.initial_heuristic
     tsp_solver = solver(temporary_folder) 
     start_exec_time = time.time()
-
     total_tour_lenght = 0
-    
     endType_manager.set_clusters_big_path(clusters, solver)
-    print(strategy.n_cluster)
     while (endType_manager.current_start_end_idx is not None):
-        print("ON")
-        endType_manager.get_current_start_end(clusters)
-        if endType_manager.current_start_end_idx:
-            suffix = f"_dm{(endType_manager.current_start_end_idx or 0)+1}"
-            cluster:Cluster = clusters.set[endType_manager.current_start_end_idx]
-            initial_tour_path = initial_heuristic_handler(cluster.cluster)
-            cluster_tour_lenght,cluster_best_tour = tsp_solver.solve(
-                                    cluster.cluster,
-                                    strategy.runs,
-                                    strategy.seed,
-                                    initial_path=initial_tour_path,
-                                    start_end=endType_manager.start_end,
-                                    suffix=suffix
-                                    )
-            endType_manager.remap_tour_path(cluster_best_tour)
-            best_path = cluster_best_tour.path
-            cluster.route = best_path
-            total_tour_lenght += cluster_tour_lenght
-        
+        current_cluster_idx,start_end_idx = endType_manager.get_current_start_end(clusters)
+        suffix = f"_dm{(start_end_idx or 0)+1}"
+        cluster:Cluster = clusters.set[current_cluster_idx]
+        initial_tour_path = initial_heuristic_handler(cluster.cluster,endType_manager.start_end)
+        cluster_tour_lenght,cluster_best_tour = tsp_solver.solve(
+                                cluster.cluster,
+                                strategy.runs,
+                                strategy.seed,
+                                initial_path=initial_tour_path,
+                                start_end=endType_manager.start_end,
+                                suffix=suffix
+                                )
+        endType_manager.remap_tour_path(cluster_best_tour)
+        best_path = cluster_best_tour.path
+        cluster.route = best_path
+        total_tour_lenght += cluster_tour_lenght
+    
     open_route_merged = []
     for cluster_idx in endType_manager.clusters_centers_tour.path:
+        last_point_idx = new_start_point_idx = None
         cluster = clusters.set[cluster_idx]
-        print(cluster.remap_idxs)
-        print(cluster.route)
-        open_route_merged.extend(np.array(cluster.remap_idxs)[np.array(cluster.route)])
-    
+        if cluster_idx > 0 : last_point_idx = open_route_merged[-1]
+        for idx in cluster.route:
+            if idx == 0 : new_start_point_idx = cluster.remap_idxs[idx]
+            open_route_merged.append(cluster.remap_idxs[idx])
+        if (last_point_idx is not None) and (new_start_point_idx is not None): 
+            last_point = grid.points[last_point_idx]
+            new_start_point = grid.points[new_start_point_idx]
+            total_tour_lenght += np.linalg.norm(np.array(last_point)-np.array(new_start_point))
+        
+
     end_exec_time = time.time()
     angle_delta_mean = compute_angle_delta_mean(grid.points,open_route_merged)
     metrics = Metrics(end_exec_time-start_exec_time,
                       total_tour_lenght,
                       angle_delta_mean)
-    
     return grid,Tour(np.array(open_route_merged)),metrics
 
-def mergedGenerator(layer:Layer,strategy) -> Tuple[Grid,Tour]:
-    pass
+def mergedGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple[Grid,Tour]:
+    temporary_folder = os.path.join(strategy.temp_dir,f"{tag}/mergedGenerator/")
+    os.makedirs(temporary_folder,exist_ok=True)
+    grid,clusters = generateGridAndClusters(layer,strategy)
+    endType_manager:TourEnd = strategy.end_type(temporary_folder)
+    initial_heuristic_handler = strategy.initial_heuristic
+    tsp_solver = solver(temporary_folder) 
+    start_exec_time = time.time()
+    
+    endType_manager.set_clusters_big_path(clusters, solver)
+    while (endType_manager.current_start_end_idx is not None):
+        current_cluster_idx,start_end_idx = endType_manager.get_current_start_end(clusters)
+        suffix = f"_dm{(start_end_idx or 0)+1}"
+        cluster:Cluster = clusters.set[current_cluster_idx]
+        initial_tour_path = initial_heuristic_handler(cluster.cluster,endType_manager.start_end)
+        _,cluster_best_tour = tsp_solver.solve(
+                                cluster.cluster,
+                                strategy.runs,
+                                strategy.seed,
+                                initial_path=initial_tour_path,
+                                start_end=endType_manager.start_end,
+                                suffix=suffix
+                                )
+        endType_manager.remap_tour_path(cluster_best_tour)
+        best_path = cluster_best_tour.path
+        cluster.route = best_path
+    
+    open_route_merged = []
+    for cluster_idx in endType_manager.clusters_centers_tour.path:
+        cluster = clusters.set[cluster_idx]
+        for idx in cluster.route:
+            open_route_merged.append(cluster.remap_idxs[idx])
+    
+    suffix = f"_merged_tour"
+    #CONVERTING OPEN ROUTE MERGED TO MATCH START END CRITERIA
+    converted_open_route = open_route_merged[:-1] + [len(open_route_merged)] + [open_route_merged[-1]]
+    #print(len(open_route_merged),len(converted_open_route))
+    start_node, end_node = open_route_merged[0], open_route_merged[-1]
+    if start_node == end_node :
+        start_node = end_node-1 if end_node-1 > 0 else end_node+1
+    if start_node is not None and end_node is not None:
+        temp_ = grid.points[0]
+        grid.points[0] = grid.points[start_node] 
+        grid.points[start_node] = temp_
+        temp_ = np.array([0,0])
+        temp_[0] = grid.points[start_node][0]
+        temp_[1] = grid.points[start_node][1]
+        grid.points[start_node][0] = grid.points[0][0] 
+        grid.points[start_node][1] = grid.points[0][1]
+        grid.points[0][0] = temp_[0]
+        grid.points[0][1] = temp_[1]
+    
+    start_end= [0,end_node]
+    if end_node == 0:
+        start_end = [0,start_node]
+
+    tour_lenght,best_merged_tour = tsp_solver.solve(
+                                    grid.points,
+                                    strategy.runs,
+                                    strategy.seed,
+                                    initial_path=converted_open_route,
+                                    start_end=start_end,
+                                    suffix=suffix
+                                    )
+    best_path = [e for e in best_merged_tour.path if e!=len(open_route_merged)]
+    #print(best_path)
+    end_exec_time = time.time()
+    angle_delta_mean = compute_angle_delta_mean(grid.points,best_path)
+    metrics = Metrics(end_exec_time-start_exec_time,
+                      tour_lenght,
+                      angle_delta_mean)
+    return grid,Tour(np.array(best_path)),metrics
 
 
 AVAILABLE_GENERATORS = {
@@ -273,6 +338,7 @@ def generateClustersPath(n_clusters:int,forma:List[np.ndarray],distance:float,se
             if save_fig_path is not None:
                 plotter.draw_vectors([np.array([last_point,first_new_point])],[[0,1]],thick=1.25,color="green")
         route_remaped.extend(remap)
+
     angle_delta_mean = compute_angle_delta_mean(grid,route_remaped)
     if save_fig_path is not None:
         plotter.draw_fig_title(total_lenght.__ceil__())
@@ -323,6 +389,7 @@ def generateClustersMergedPath(n_clusters:int,forma:List[np.ndarray],distance:fl
         remap = [_cluster.remap_idxs[idx] for idx in _cluster.route]
         routes_remaped.extend(remap)
     _ta = time.time()
+
     dst_mat = compute_distance_matrix_numba_parallel(b_cluster.cluster,b_cluster.cluster)
     mat_file_name = "c_merged.txt"
     mat_file_name = os.path.join(temporary_folder, mat_file_name)
@@ -339,6 +406,7 @@ def generateClustersMergedPath(n_clusters:int,forma:List[np.ndarray],distance:fl
     _exec_time += time.time() - _ta
     best_route = np.array(best_route[0]) - 1
     angle_delta_mean = compute_angle_delta_mean(grid,best_route)
+    
     if not save_fig_path is None:
         plotter.set_background_colors(['black'])
         plotter.draw_points([[grid[best_route[0]],grid[best_route[-1]]]],colors_maps=[[1,2]],markersize=3,edgesize=1)
@@ -430,11 +498,13 @@ def generatePathOpenClusters(n_clusters:int,forma:List[np.ndarray],distance:floa
     BORDERS_DISTANCE = 0
     CLUSTER_N = n_clusters
     LKH_RUNS = runs
+    LKH_PATH = "core/TSP/LKH/LKH.exe"
+    from core.TSP.LKH.LKH import writeDistanceMatrixProblemFile,writeInitialTourFile
     _total_lenght = 0
     _exec_time = 0
     temporary_folder = "outputs/temp/open_clusters_path/"
     grid, pred, centers = generatePointsAndClusters(forma, clusters_n=CLUSTER_N, distance=DISTANCE,figure_sep=BORDERS_DISTANCE,seed=SEED,fliped_y=fliped_y)
-    grid_clusters = [Cluster() for _ in range(n_clusters)]
+    grid_clusters = [Cluster([]) for _ in range(n_clusters)]
     for jj, p in enumerate(pred):
         grid_clusters[p].cluster.append(grid[jj])
         grid_clusters[p].remap_idxs.append(jj)        
@@ -469,10 +539,13 @@ def generatePathOpenClusters(n_clusters:int,forma:List[np.ndarray],distance:floa
         clusters_start_ends.append([start_next_cluster,1])
     _exec_time += time.time() - _ta
     
+    print(clusters_start_ends)
+    print(greedy_idxs)
     for idx, greedy_idx in enumerate(greedy_idxs):
         _ta = time.time()
         cluster = grid_clusters[greedy_idx]
         start_node, end_node = clusters_start_ends[idx]
+        print(greedy_idx," | ",start_node,end_node)
         if start_node == end_node :
             start_node = end_node-1 if end_node-1 > 0 else end_node+1
         if start_node is not None and end_node is not None:

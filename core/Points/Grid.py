@@ -31,8 +31,8 @@ class Grid:
         self.len = points.shape[0]
 
 class Cluster:
-    def __init__(self):
-        self.cluster = None
+    def __init__(self,cluster=None):
+        self.cluster = cluster
         self.route = []
         self.remap_idxs = []
 
@@ -58,11 +58,11 @@ def generateGridAndClusters(layer: Layer, strategy, gen_clusters=True) -> Tuple[
             seed=strategy.seed,
             fliped_y=layer.is_y_flipped
         )
-        print("POINTS STUFF")
-        print(centers)
-        print("AFTER STUFF")
+        # print("POINTS STUFF")
+        # print(centers)
+        # print("AFTER STUFF")
         if points is None or pred is None:
-            print("STRANGE SPOT")
+            #print("STRANGE SPOT")
             return Grid(np.empty((0, 2))), []
             
         grid_clusters = [Cluster() for _ in range(strategy.n_cluster)]
