@@ -14,8 +14,8 @@ if __name__ == "__main__":
     layer = Layer.From(FILE,scale=0.5)
     strategy = Strategy(save_fig=True,distance=5,seed=SEED)
     solver_str = "lkh"
-    generator_str = "merged"
-    end_type_str = "closed"
+    generator_str = "clusters"
+    end_type_str = "open"
     initial_heuristic_str = "continuous"
     test_name = "test_"+generator_str+"_"+end_type_str+"_"+initial_heuristic_str
     strategy.solve(layer,

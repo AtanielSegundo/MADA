@@ -2,6 +2,7 @@ import numpy as np
 from core.transform import geometrys_from_txt_nan_separeted
 from core.clipper import readPathSVG
 from core.slicing import getSliceStl
+from core.visualize import SlicesPlotter
 from os.path import basename
 
 # format : (Handlers,is_y_flipped)
@@ -25,6 +26,10 @@ class Layer:
             handler,is_y_flipped = _tuple
             data = handler(path,**kwargs)
             return Layer(data,basename(path),is_y_flipped,**kwargs)
+    
+    def show(self):
+        plotter = SlicesPlotter([self.data])
+        plotter.show()
 
 if __name__ == "__main__":
     l = Layer.From("assets\\svg\\rabbit.svg")

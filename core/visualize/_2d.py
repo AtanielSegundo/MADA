@@ -184,9 +184,8 @@ class SlicesPlotter:
     def show(self):
         if not self.slices_drawed:
             self.draw_slices()
-        self.fig.show()
-        input("Enter To Destroy Window: ")
-
+        plt.show()
+        
     def save(self,file_path:str,dpi=250):
         if not self.slices_drawed:
             self.draw_slices()

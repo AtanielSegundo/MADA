@@ -58,6 +58,7 @@ def generate_square_box_by_area(area: float, center: Tuple[float, float]):
 
 def generate_square_box_by_lenght(side_lenght: float, center: Tuple[float, float]):
     half_side = side_lenght / 2
+    #print(center)
     square = [
         [center[0] - half_side, center[1] - half_side],
         [center[0] + half_side, center[1] - half_side],

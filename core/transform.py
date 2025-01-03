@@ -9,9 +9,9 @@ def fold_3d_array_to_2d_using_NaN_separator(_3d_array: np.ndarray) -> np.ndarray
     result = np.array(_1d_arrays).reshape(-1, 2)
     return result
 
-def geometrys_from_txt_nan_separeted(txt_path:str,sep=" ",**kwargs) -> np.ndarray:
+def geometrys_from_txt_nan_separeted(txt_path:str,scale=1.0,sep=" ",**kwargs) -> np.ndarray:
     geometrys = []
-    raw_geometrys  = np.fromfile(txt_path,sep=sep).reshape(-1,2)
+    raw_geometrys  = np.fromfile(txt_path,sep=sep).reshape(-1,2) * scale
     nans_idx = list(np.argwhere(np.isnan(raw_geometrys))[:,0])[::2]
     nans_len = len(nans_idx)
     if nans_len == 0 : return [raw_geometrys]

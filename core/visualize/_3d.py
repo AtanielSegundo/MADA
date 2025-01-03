@@ -4,11 +4,12 @@ import matplotlib.pyplot as pyplot
 from os.path import basename
 from typing import List
 
-def showStl(stl_path:str,scale=0.1) :
+def showStl(stl_path:str,scale=1) :
     solidPart = pyslm.Part(basename(stl_path).split(".")[0])
     solidPart.setGeometry(stl_path)
     solidPart.scaleFactor = scale
     solidPart.dropToPlatform() 
+    print(solidPart.boundingBox)
     solidPart.geometry.show()
 
 def showSlices3d(slices:List[List[np.ndarray]]):

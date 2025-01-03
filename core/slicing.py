@@ -3,7 +3,49 @@ import pyslm
 import matplotlib.pyplot as pyplot
 from typing import List
 from os.path import basename
-from .visualize import ShowGeometrys, showSlices3d_matplot
+from .visualize import ShowGeometrys
+
+
+def showVectors3d_matplot(slices: List[List[np.ndarray]], 
+                          fig_title: str = "",
+                          thick: int = 1):
+    from core.Tour import generateCH
+    from core.Points.Grid import generateGridAndClusters
+    from core.Layer import Layer
+    from core.TSP.strategy import Strategy
+
+    """
+    Visualize the 3D slices in a single 3D plot.
+
+    Parameters:
+    - slices: List of lists of 3D numpy arrays. Each sublist corresponds to a slice, 
+              and each numpy array within the sublist corresponds to a part of that slice.
+    - fig_title: Title of the figure (default is '3D Slices Visualization')
+    """
+    fig = pyplot.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    for slice_3d_list in slices:
+        for slice_3d in slice_3d_list:
+            slice_2d = slice_3d[:, :2]
+            grid, _ = generateGridAndClusters(Layer([slice_2d], "__test__", is_y_flipped=True),
+                                               Strategy(), gen_clusters=False)
+            path = generateCH(grid.points)
+            path_points = []
+            z = slice_3d[0,2]
+            for idx in path:
+                x,y = grid.points[idx]
+                path_points.append([x,y,z])
+            path_points = np.array(path_points)
+            if len(path_points) > 1:
+                ax.plot(path_points[:, 0], path_points[:, 1], path_points[:, 2], 
+                        color='r', linewidth=thick)
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    pyplot.title(fig_title)
+    pyplot.show()
 
 def getSliceStl(stl_path:str,z:float=1,
                 origin: List[float] = [5.0, 10.0, 0.0],
@@ -52,7 +94,7 @@ def sliceStlVector(stl_path: str, n_slices=6, z_step=14,
     if d2_mode:
         ShowGeometrys(slices, spliter=1 if n_slices == 1 else 2)
     else:
-        showSlices3d_matplot(slices)
+        showVectors3d_matplot(slices)
 
 
 def sliceStlRaster(stl_path: str, n_slices=6, z_step=14,
