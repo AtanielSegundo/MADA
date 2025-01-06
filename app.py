@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Qt5Agg')
 import multiprocessing
 import threading
 import sys
@@ -9,12 +11,12 @@ import os
 from math import ceil,floor
 from PyQt5.QtWidgets import QApplication, QLineEdit,QMainWindow, QPushButton,QComboBox,\
                             QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog, QMessageBox
-from PyQt5.QtCore import Qt,pyqtSignal, QObject
+from PyQt5.QtCore import Qt,pyqtSignal
 from PyQt5.QtGui import QIcon,QIntValidator,QDoubleValidator
 from core.Layer import Layer
 from core.Layer import SUPPORTED as layer_supports
 from core.Part import SUPPORTED as part_supports
-from core.visualize import showStl,ShowGeometrys
+from core.visualize import showStl
 from core.TSP.strategy import AVAILABLE_END_TYPES,AVAILABLE_SOLVERS,AVAILABLE_GENERATORS,AVAILABLE_INITIAL_HEURISTICS
 from core.TSP.strategy import Strategy
 from core.visualize import SlicesPlotter
@@ -426,6 +428,7 @@ class App(QMainWindow):
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     app = QApplication(sys.argv)
     window = App()
     window.show()

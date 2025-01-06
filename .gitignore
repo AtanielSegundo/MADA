@@ -16,6 +16,10 @@ build/
 develop-eggs/
 dist/
 downloads/
+*.spec
+dist/
+build/
+virtual/
 eggs/
 .eggs/
 lib/
