@@ -2,9 +2,12 @@ import numpy as np
 import pyslm
 import matplotlib.pyplot as pyplot
 from typing import List
-from os.path import basename
+from os.path import basename,join,dirname
 from .visualize import ShowGeometrys
 
+ROTATE_90_X =  np.array([90, 0, 0])
+ROTATE_90_Y =  np.array([ 0,90, 0])
+ROTATE_90_Z =  np.array([ 0, 0,90])
 
 def showVectors3d_matplot(slices: List[List[np.ndarray]], 
                           fig_title: str = "",
@@ -48,10 +51,10 @@ def showVectors3d_matplot(slices: List[List[np.ndarray]],
     pyplot.show()
 
 def getSliceStl(stl_path:str,z:float=1,
-                origin: List[float] = [5.0, 10.0, 0.0],
-                rotation: np.ndarray[float] = np.array([0, 0, 30]),
-                scale: float = 2.0,
-                dropToPlataform: bool = True,) :
+                origin: List[float] = [0.0, 0.0, 0.0],
+                rotation: np.ndarray[float] = np.array([0, 0, 0]),
+                scale: float = 1.0,
+                dropToPlataform: bool = True) :
     solidPart = pyslm.Part(basename(stl_path).split(".")[0])
     solidPart.setGeometry(stl_path)
     # Transform the part: Rotate, translate, scale, and drop to platform
@@ -61,6 +64,36 @@ def getSliceStl(stl_path:str,z:float=1,
     if dropToPlataform:
         solidPart.dropToPlatform()
     return solidPart.getVectorSlice(z)
+
+def transformStl(stl_path: str,
+                 output_path: str = None,
+                 origin: List[float] = [0.0, 0.0, 0.0],
+                 rotation: np.ndarray = np.array([0, 0, 0]),
+                 scale: float = 1.0,
+                 dropToPlataform: bool = True) -> None:
+    """
+    Transforms an STL file by applying scaling, translation, rotation, 
+    and optionally dropping it to the platform, then saves it.
+    
+    Args:
+        stl_path (str): Path to the input STL file.
+        output_path (str): Path to save the transformed STL file.
+        origin (List[float]): Translation vector.
+        rotation (np.ndarray): Rotation angles (in degrees, [x, y, z]).
+        scale (float): Scaling factor.
+        dropToPlataform (bool): Whether to drop the object to the platform.
+    """
+    output_path = output_path or dirname(stl_path)
+    solidPart = pyslm.Part(basename(stl_path).split(".")[0])
+    solidPart.setGeometry(stl_path)
+    solidPart.scaleFactor = scale
+    solidPart.origin = origin
+    solidPart.rotation = rotation
+    if dropToPlataform:
+        solidPart.dropToPlatform()
+    transformed_stl_path = join(output_path, f"{basename(stl_path).split('.')[0]}_transformed.stl")
+    solidPart.geometry.export(transformed_stl_path)
+    print(f"Transformed STL saved at: {transformed_stl_path}")
 
 def sliceStlVector(stl_path: str, n_slices=6, z_step=14,
                    origin: List[float] = [5.0, 10.0, 0.0],

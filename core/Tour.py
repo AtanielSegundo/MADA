@@ -63,7 +63,10 @@ class openEnd(TourEnd):
         else:
             _remap,centers = sort_points_up_right(clusters.centers)
             tsp_solver = Solver(self.temporary_folder)
-            _,centers_tour = tsp_solver.solve(centers,runs=runs)
+            if centers.shape[0] < 3 :
+                centers_tour = Tour(np.arange(centers.shape[0]))
+            else:
+                _,centers_tour = tsp_solver.solve(centers,runs=runs)
             centers_tour.remap(_remap)
             # Determinando o ponto de inicio e fim por clusters mais proximos
             # Utiliza os indices do point grid para poupar espaço

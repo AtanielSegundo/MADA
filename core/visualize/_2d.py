@@ -131,6 +131,7 @@ class SlicesPlotter:
         return self
 
     def set_random_usable_colors(self,amount:int):
+         amount += 1
          r_idxs = np.random.choice(_AVAILABLE_IDXS, amount, replace=False)
          self.usable_colors = np.array(_AVAILABLE_COLORS)[r_idxs]
          return self

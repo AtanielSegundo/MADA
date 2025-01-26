@@ -89,14 +89,18 @@ class AppState:
         self.border_distance = 0    #float
         self.runs = 5   #int
         
-def run_show(state:AppState):
+def run_show(state: AppState):
     app = QApplication(sys.argv)
-    if state.process_mode == LAYER_MODE:
-        layer = Layer.From(state.target_file,scale=state.scale,z=state.z_step)
-        layer.show()
-    if state.process_mode == PART_MODE:
-        showStl(state.target_file)  
-    app.exec_()
+    try:
+        if state.process_mode == LAYER_MODE:
+            layer = Layer.From(state.target_file, scale=state.scale, z=state.z_step)
+            layer.show()
+        elif state.process_mode == PART_MODE:
+            showStl(state.target_file)
+        app.exec_()
+    finally:
+        os._exit(0)
+
 
 def file_watcher(output_path,p_button,signal):
     """Monitors for .HARD_PROCESS_DONE file and emits a signal to update the GUI."""
@@ -132,7 +136,7 @@ def run_process(state:AppState):
         plotter.set_background_colors(['black'])
         start_point = grid.points[best_tour.path[0]]
         end_point = grid.points[best_tour.path[-1]]
-        plotter.draw_points([[start_point,end_point]],colors_maps=[[1,2]],markersize=3,edgesize=1)
+        plotter.draw_points([[start_point,end_point]],colors_maps=[[0,state.n_clusters]],markersize=3,edgesize=1)
         plotter.draw_vectors([grid.points],[best_tour.path],thick=1.25)
         plotter.draw_fig_title(metrics.tour_lenght.__ceil__())
         _fp = f"{os.path.basename(layer.tag)}_{state.generator}_{state.end_type}_{state.initial_heuristic}.png"
