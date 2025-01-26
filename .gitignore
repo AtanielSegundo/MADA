@@ -9,6 +9,8 @@ outputs/*
 *.*~
 # C extensions
 *.so
+individual/
+
 
 # Distribution / packaging
 .Python

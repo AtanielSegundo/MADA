@@ -7,7 +7,7 @@ from typing import Tuple,Type
 from core.visualize._2d import SlicesPlotter
 from core.Points.Grid import generateGridAndClusters,Cluster
 from core.Points.operations import compute_angle_delta_mean
-from core.TSP.solver import Solver
+from core.TSP.solver import Solver,NoSolver
 from core.Tour import generateCH,generateDummyTour,generateCH_with_dummy,Tour,openEnd,closeEnd,TourEnd
 from core.Layer import Layer
 from core.TSP.LKH.LKH import LKH
@@ -213,7 +213,8 @@ AVAILABLE_END_TYPES = {
 }
 
 AVAILABLE_SOLVERS = {
-    "lkh" : LKH
+    "lkh" : LKH,
+    "no_solver" : NoSolver
 }
 
 class Strategy:

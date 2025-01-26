@@ -137,6 +137,7 @@ def run_process(state:AppState):
         plotter.draw_fig_title(metrics.tour_lenght.__ceil__())
         _fp = f"{os.path.basename(layer.tag)}_{state.generator}_{state.end_type}_{state.initial_heuristic}.png"
         plotter.save(os.path.join(out_path,_fp))
+        _strategy.clearTemporary()
         plotter.show()
         
     if state.process_mode == PART_MODE:
