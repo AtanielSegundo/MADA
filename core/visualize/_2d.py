@@ -155,7 +155,7 @@ class SlicesPlotter:
         return self
 
     def draw_vectors(self,points:List[np.ndarray],vectors_map:List[np.ndarray],
-                     thick:int=1,color='red'):
+                     thick:int=1,color='red',d_lim=None):
         assert len(points) == len(vectors_map)
         for ii in range(len(vectors_map)):
                 vector_map = vectors_map[ii]
@@ -165,10 +165,17 @@ class SlicesPlotter:
                     for idx in range(len(vector_map)-1):
                         x0, y0 = point_grid[vector_map[idx]]
                         x1, y1 = point_grid[vector_map[idx+1]]
+                        dx = (x1-x0)
+                        dy = (y1-y0)
+                        if d_lim != None:
+                            if dx*dx + dy*dy >= d_lim*d_lim :
+                                color = 'blue'
+                            else:
+                                color = 'red'  #TODO : NEGATIVE COLOR SWAP 
                         # Vector Head Compensation
-                        a = np.arctan2((y1-y0),(x1-x0))
+                        a = np.arctan2(dy,dx)
                         cx,cy = (thick/2)*np.cos(a) , (thick/2)*np.sin(a)  
-                        canvas.arrow(x0+cx, y0+cy, (x1-x0)-2.5*cx, (y1-y0)-2.5*cy,
+                        canvas.arrow(x0+cx, y0+cy, dx-2.5*cx, dy-2.5*cy,
                                      width=thick/4,head_width=thick,head_length=thick, color=color)
         return self
 

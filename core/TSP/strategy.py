@@ -271,8 +271,11 @@ class Strategy:
             start_point = grid.points[best_tour.path[0]]
             end_point = grid.points[best_tour.path[-1]]
             plotter.draw_points([[start_point,end_point]],
-                                colors_maps=[[1,2]],markersize=3,edgesize=1)
-            plotter.draw_vectors([grid.points],[best_tour.path],thick=1.25)
+                                colors_maps=[[0,self.n_cluster]],markersize=3,edgesize=1)
+            _c_sqrt_2 = 1.4142135624
+            wire_arc_distance_lim = self.distance * _c_sqrt_2 
+            plotter.draw_vectors([grid.points],[best_tour.path],thick=1.25,
+                                 d_lim=wire_arc_distance_lim)
         if self.save_fig:
             plotter.draw_fig_title(metrics.tour_lenght.__ceil__())
             plotter.save(save_fig_path)

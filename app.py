@@ -1,5 +1,6 @@
 import matplotlib
 matplotlib.use('Qt5Agg')
+import json
 import multiprocessing
 import threading
 import sys
@@ -26,6 +27,8 @@ ARR_AVAILABLE_END_TYPES = list(AVAILABLE_END_TYPES.keys())
 ARR_AVAILABLE_SOLVERS = list(AVAILABLE_SOLVERS.keys())
 ARR_AVAILABLE_GENERATORS = list(AVAILABLE_GENERATORS.keys())
 ARR_AVAILABLE_INITIAL_HEURISTICS = list(AVAILABLE_INITIAL_HEURISTICS.keys())
+
+
 
 get_first =  lambda _dict : next(iter(_dict.keys()))
 GREY = "2E2E2E"
@@ -69,6 +72,7 @@ class RealTimePlot3DWithDisconnectedLines:
         plt.pause(0.01)
 
 
+APP_STATE_SAVE_FILE_NAME = ".last_app_state.json"
 class AppState:
     def __init__(self):
         self.project_name = str(int(random.random()*1e5))
@@ -88,7 +92,58 @@ class AppState:
         self.distance = 7       #float
         self.border_distance = 0    #float
         self.runs = 5   #int
+        self.load_app_state()
+
+    def save_app_state(self):
+        _current_app_state = {
+            "project_name" : self.project_name,
+            "target_file" : os.path.relpath(self.target_file) ,
+            "initial_heuristic" : self.initial_heuristic,
+            "end_type" : self.end_type  ,
+            "generator" : self.generator ,
+            "tsp_solver" : self.tsp_solver,
+            "multiple_processes_supported" : self.multiple_processes_supported,
+            "process_mode" : self.process_mode,
+            "scale" : self.scale ,
+            "z_step" : self.z_step,
+            "seed" : self.seed  ,
+            "n_clusters" : self.n_clusters,
+            "distance" : self.distance,
+            "border_distance" : self.border_distance,
+            "runs" : self.runs,
+        }
+        with open(APP_STATE_SAVE_FILE_NAME,"w") as f:
+            json.dump(_current_app_state,f,indent=4)
+        print("[INFO] Current App State Saved For Next Session")
+
+    def load_app_state(self):
+        if not os.path.exists(APP_STATE_SAVE_FILE_NAME):
+            print("[WARNING] No saved state found. Using default settings.")
+            return
         
+        with open(APP_STATE_SAVE_FILE_NAME, "r") as f:
+            try:
+                data = json.load(f)
+                self.project_name = data.get("project_name", self.project_name)
+                self.target_file = data.get("target_file", self.target_file)
+                self.initial_heuristic = data.get("initial_heuristic", self.initial_heuristic)
+                self.end_type = data.get("end_type", self.end_type)
+                self.generator = data.get("generator", self.generator)
+                self.tsp_solver = data.get("tsp_solver", self.tsp_solver)
+                self.multiple_processes_supported = data.get("multiple_processes_supported", self.multiple_processes_supported)
+                self.process_mode = data.get("process_mode", self.process_mode)
+                self.scale = data.get("scale", self.scale)
+                self.z_step = data.get("z_step", self.z_step)
+                self.seed = data.get("seed", self.seed)
+                self.n_clusters = data.get("n_clusters", self.n_clusters)
+                self.distance = data.get("distance", self.distance)
+                self.border_distance = data.get("border_distance", self.border_distance)
+                self.runs = data.get("runs", self.runs)
+                print("[INFO] App State Loaded Successfully")
+            except json.JSONDecodeError:
+                print("[ERROR] Failed to load saved state. Using default settings.")
+
+
 def run_show(state: AppState):
     app = QApplication(sys.argv)
     try:
@@ -100,7 +155,6 @@ def run_show(state: AppState):
         app.exec_()
     finally:
         os._exit(0)
-
 
 def file_watcher(output_path,p_button,signal):
     """Monitors for .HARD_PROCESS_DONE file and emits a signal to update the GUI."""
@@ -232,6 +286,10 @@ class App(QMainWindow):
         
         self.main_layout.addLayout(self.process_options_container_layout)
         self.process_completed.connect(self.on_process_completed)
+
+    def closeEvent(self, event):
+        self.state.save_app_state()
+        event.accept()  
 
     def vizulize_target(self):
         p = multiprocessing.Process(target=run_show, args=(self.state,))
