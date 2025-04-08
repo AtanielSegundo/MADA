@@ -1,0 +1,7 @@
+K: 
+    1 , 2 , 4 , 6 , 8 , 12  
+PARTS:
+    Cframe:  individual/Cframe.stl
+    Flange:  individual/flange16furos.stl, scale=0.8
+    Gripper: individual/gripperroboticmaior.stl
+    Rabbit:  assets/txt/formas/rabbit.txt

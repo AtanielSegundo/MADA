@@ -1,0 +1,6 @@
+K: 
+    1 , 4 , 8
+PARTS:
+    Tie: individual/Part_Wang_transformed.stl
+    Flange:  individual/flange16furos.stl, scale=0.75
+    Gripper: individual/gripperroboticmaior.stl

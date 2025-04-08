@@ -1,3 +1,50 @@
+import numpy as np
+import pyclipr.pyclipr
+from core.clipper import offsetPaths
+from core.geometry import rotate_180,flip_horizontal,nthgone
+from core.visualize import ShowGeometrys
+    
+def generateBridge(dim_size:float) -> np.ndarray :
+    square = nthgone(4,dim_size) 
+    circle = nthgone(100,dim_size/2,center_p=(0,3*dim_size/4)) 
+    pc = pyclipr.Clipper()
+    pc.scaleFactor = int(1000)
+    pc.addPaths([square],pyclipr.Subject)
+    pc.addPath(circle,pyclipr.Clip)
+    result = pc.execute(pyclipr.Difference, pyclipr.FillRule.EvenOdd)[0]
+    return rotate_180(np.array([result[i%len(result)] for i in range(len(result)+1)]))
+    
+def offsetBridge(bridge_size:float = 4,DISTANCE=-1,ITER=3,show=False) :
+    bridge   = generateBridge(bridge_size)
+    offseted = offsetPaths([bridge],DISTANCE,ITER)
+    if show : ShowGeometrys([[bridge],offseted],spliter=2)
+    return bridge,offseted
+
+def getRedStuffContours() :
+    import cv2
+    image = cv2.imread('assets/png/red_stuff.png')
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    lower_red1 = np.array([0, 50, 50], dtype=np.uint8)  
+    upper_red1 = np.array([20, 255, 255], dtype=np.uint8)
+    lower_red2 = np.array([170, 50, 50], dtype=np.uint8)  
+    upper_red2 = np.array([255, 255, 255], dtype=np.uint8)
+    mask1 = cv2.inRange(hsv_image, lower_red1, upper_red1)
+    mask2 = cv2.inRange(hsv_image, lower_red2, upper_red2)
+    red_mask = mask1 | mask2
+    contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contour_list = []
+    for contour in contours:
+        if len(contour) > 2:  
+            contour_list.append(np.squeeze(contour, axis=1)) 
+    contour_arr = np.array([contour_list[i%len(contour_list)] for i in range(len(contour_list)+1)])[0]
+    return flip_horizontal(rotate_180(contour_arr))
+
+def offsetRedStuff(DISTANCE=-40,ITER=1,show=False) :
+    redStuff = getRedStuffContours()
+    offseted = offsetPaths([redStuff],DISTANCE,ITER)
+    if show: ShowGeometrys([offseted],spliter=1)
+    return redStuff,offseted
+
 available_opts = []
 desired_function = ""
 
@@ -67,7 +114,6 @@ def test_clipper(*params):
     import numpy as np
     from core.clipper import offsetSVG
     from core.transform import fold_3d_array_to_2d_using_NaN_separator
-    from test_h.clipper import offsetBridge, offsetRedStuff
     if check_params("rabbit", "hole"):
         offsetSVG("assets/rabbit.svg", HOLE_RAY=0)
         rabbit, hole, offsets = offsetSVG(
@@ -142,13 +188,14 @@ def test_ttf(*params):
 
 
 def test_kmeans(*params):
-    from core.Grid.operations import generatePointsAndClusters
+    from core.Points.Grid import generatePointsAndClusters
     from core.visualize import SlicesPlotter
     from core.geometry import generate_square_box_by_lenght,getPolygonsCenter
     import os
     ctx.distance = 5
     ctx.cluster_n = 6
     ctx.output = f"outputs/d_{ctx.distance}_cn_{ctx.cluster_n}"
+    os.makedirs(ctx.output,exist_ok=True)
     if check_params("ttf"):
         from core.text import str2Polygons
         ctx.text = "WAAM\nMADA"
@@ -200,10 +247,10 @@ def test_kmeans(*params):
                 if "truss" not in arquivo:
                     forma = getSliceStl(os.path.join(ctx.path, arquivo), z=1)
                 else:
-                    forma = getSliceStl(os.path.join(ctx.path, arquivo), z=1, scaleFactor=0.25)
+                    forma = getSliceStl(os.path.join(ctx.path, arquivo), z=1, scale=0.25)
                 file_name = arquivo.replace(".stl", "_klusters.png")
                 grid, pred, centers = generatePointsAndClusters(forma,  distance=ctx.distance, clusters_n=ctx.cluster_n, fliped_y=True)
-                _plt = SlicesPlotter([forma])
+                _plt = SlicesPlotter([None])
                 _plt.set_random_usable_colors(ctx.cluster_n)
                 _plt.draw_points([grid],colors_maps=[pred]).draw_points([centers],colors_maps=[list(range(0,ctx.cluster_n))],edgesize=3).save(os.path.join(ctx.output,file_name))
                 print()
@@ -220,7 +267,7 @@ def test_slm(*params):
     ctx.scale = 1.0 
     ctx.show = False
     model_params = {
-        "custom": {"path": "assets/3d/bolsonaro002.stl", "z_step": 1, "n_slices": 100, "scale": 1.0},
+        "custom": {"path": "assets/3d/flange16furos.stl", "z_step": 1, "n_slices": 100, "scale": 1.0},
         "bonnie": {"path": "assets/3d/bonnie.stl", "z_step": 2, "n_slices": 200, "scale": 1.0},
         "truss":  {"path": "assets/3d/truss_.stl", "z_step": 1, "n_slices": 100, "scale": 1.0},
         "Foice":  {"path": "assets/3d/Petro_foice_c.stl", "z_step": 1, "n_slices": 100, "scale": 1.0},

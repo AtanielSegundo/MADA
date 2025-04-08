@@ -187,11 +187,11 @@ def run_process(state:AppState):
         
         plotter = SlicesPlotter([None], tile_direction='horizontal')
         plotter.set_random_usable_colors(state.n_clusters)
-        plotter.set_background_colors(['black'])
+        #plotter.set_background_colors(['black'])
         start_point = grid.points[best_tour.path[0]]
         end_point = grid.points[best_tour.path[-1]]
         plotter.draw_points([[start_point,end_point]],colors_maps=[[0,state.n_clusters]],markersize=3,edgesize=1)
-        plotter.draw_vectors([grid.points],[best_tour.path],thick=1.25)
+        plotter.draw_vectors([grid.points],[best_tour.path],thick=1.25,d_lim=state.distance*1.4142135624)
         plotter.draw_fig_title(metrics.tour_lenght.__ceil__())
         _fp = f"{os.path.basename(layer.tag)}_{state.generator}_{state.end_type}_{state.initial_heuristic}.png"
         plotter.save(os.path.join(out_path,_fp))

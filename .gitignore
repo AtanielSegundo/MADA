@@ -7,6 +7,7 @@ __pycache__/
 outputs/*
 !outputs/.keep
 *.*~
+*.json
 # C extensions
 *.so
 individual/
