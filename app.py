@@ -182,6 +182,7 @@ def run_process(state:AppState):
         grid,best_tour,metrics = _strategy.solve(layer,state.tsp_solver,state.generator,
                         end_type=state.end_type,
                         initial_heuristic=state.initial_heuristic)
+        print(f"[INFO] Part:{state.project_name} - Number of Nodes {metrics.nodes_count}")
         with open(out_path+"/.HARD_PROCESS_DONE","w") as f:
             pass
         

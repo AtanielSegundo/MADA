@@ -19,9 +19,10 @@ number_of_points = int
 Grid = np.ndarray
 
 class Metrics:
-    def __init__(self,execution_time,tour_lenght,angle_delta_mean):
-        self.execution_time = execution_time
-        self.tour_lenght = tour_lenght
+    def __init__(self,execution_time,tour_lenght,angle_delta_mean,nodes_count=0):
+        self.nodes_count      = nodes_count
+        self.execution_time   = execution_time
+        self.tour_lenght      = tour_lenght
         self.angle_delta_mean = angle_delta_mean
 
 
@@ -73,7 +74,8 @@ def rawGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple[Grid
     angle_delta_mean = compute_angle_delta_mean(grid.points,best_path)
     metrics = Metrics(end_exec_time-start_exec_time,
                       tour_lenght,
-                      angle_delta_mean)
+                      angle_delta_mean,
+                      grid.len)
     return grid,Tour(best_path),metrics
 
 
@@ -123,7 +125,8 @@ def clustersGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple
     angle_delta_mean = compute_angle_delta_mean(grid.points,open_route_merged)
     metrics = Metrics(end_exec_time-start_exec_time,
                       total_tour_lenght,
-                      angle_delta_mean)
+                      angle_delta_mean,
+                      grid.len)
     return grid,Tour(np.array(open_route_merged)),metrics
 
 def mergedGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple[Grid,Tour]:
@@ -195,7 +198,8 @@ def mergedGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple[G
     angle_delta_mean = compute_angle_delta_mean(grid.points,best_path)
     metrics = Metrics(end_exec_time-start_exec_time,
                       tour_lenght,
-                      angle_delta_mean)
+                      angle_delta_mean,
+                      grid.len)
     return grid,Tour(np.array(best_path)),metrics
 
 

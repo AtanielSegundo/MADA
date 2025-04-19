@@ -13,10 +13,12 @@ Purpose:
         verificar como se dá a relação entre o tamanho do percurso e os
         K clusters.
 """
+import os 
+os.environ['FOR_DISABLE_CONSOLE_CTRL_HANDLER'] = '1'
+
 from typing import Dict, List, Tuple
 from pathlib import Path
 import argparse
-import os 
 import time
 
 import numpy as np
@@ -32,6 +34,16 @@ VERBOSE = False
 def log_info(message: str) -> None:
     if VERBOSE:
         print(f"[INFO] {message}")
+
+class AnovaContext:
+    def __init__(self):
+        self.data = dict()
+        self.args = dict()
+        self.isResumed    = False 
+        self.current_step = 0
+        self.current_part = None
+        self.current_kval = None
+        self.current_iteration = None
 
 class TestPart:
     """Represents a test part with a layer constructed from a file."""
@@ -82,40 +94,47 @@ metric_to_gain = {
 }
 
 
-def create_data_frame(strategy: Strategy, iterations: int, 
+def create_data_frame(ctx:AnovaContext,strategy: Strategy, iterations: int, 
                      parts: List[TestPart], k_values: List[int]) -> Dict[str, Dict[int, Frame]]:
     """Generates experimental data by testing different cluster counts on parts."""
-    data = {}
     total_steps = len(parts) * len(k_values) * iterations
-    current_step = 0
-    
-    for part in parts:
-        log_info(f"Processing Part: {part.id}")
-        print(f"\n[INFO] Processing Part: {part.id}")
-        data[part.id] = {}
-        
-        for k in k_values:
-            log_info(f"Setting K = {k} for part {part.id}")
-            print(f"  [INFO] Setting K = {k}")
-            data[part.id][k] = Frame(iterations)
-            strategy.n_cluster = k
-            
-            for i in range(iterations):
-                current_step += 1
-                print(f"    [INFO] Iteration {i+1}/{iterations} (step {current_step}/{total_steps})", end='\r', flush=True)
-                # A chamada do solver retorna uma tupla onde o terceiro elemento possui as métricas
-                _, _, metrics_obj = strategy.solve(
-                    part.layer, SOLVER, GENERATOR, 
-                    end_type=END_TYPE, initial_heuristic=HEURISTIC
-                )
-                data[part.id][k].append_sample(
-                    metrics_obj.execution_time,
-                    metrics_obj.tour_lenght,  # Considere ajustar para "tour_length" se necessário.
-                    metrics_obj.angle_delta_mean
-                )
-            print()  # quebra de linha após terminar iterações para este K
+    if ctx.isResumed:
+        i = ctx.current_part
+        j = ctx.current_kval
+        l = ctx.current_iteration
+    else :
+        i,j,l = 0 , 0 , 0
+    try:
+        for ii in range(i,len(parts)):
+            log_info(f"Processing Part: {parts[ii].id}")
+            print(f"\n[INFO] Processing Part: {parts[ii].id}")
+            ctx.data[parts[ii].id] = {}
+            ctx.current_part = ii 
+            for jj in range(j,len(k_values)):
+                log_info(f"Setting K = {k_values[jj]} for {parts[ii].id}")
+                print(f"  [INFO] Setting K = {k_values[jj]}")
+                ctx.data[parts[ii].id][k_values[jj]] = Frame(iterations)
+                strategy.n_cluster = k_values[jj]
+                ctx.current_kval = jj
+                for ll in range(l,iterations):
+                    ctx.current_iteration = ll
+                    print(f"    [INFO] Iteration {ll+1}/{iterations} (step {ctx.current_step}/{total_steps})", end='\r', flush=True)
+                    # A chamada do solver retorna uma tupla onde o terceiro elemento possui as métricas
+                    _, _, metrics_obj = strategy.solve(
+                        parts[ii].layer, SOLVER, GENERATOR, 
+                        end_type=END_TYPE, initial_heuristic=HEURISTIC
+                    )
+                    ctx.data[parts[ii].id][k_values[jj]].append_sample(
+                        metrics_obj.execution_time,
+                        metrics_obj.tour_lenght,  # Considere ajustar para "tour_length" se necessário.
+                        metrics_obj.angle_delta_mean
+                    )
+                    ctx.current_step += 1
+                print()  
+    except Exception as e:
+        handle_exception_save_anova_context(e)
     print("\n[INFO] Data frame creation complete!")
-    return data
+    return ctx.data
 
 def generate_anova_table(data: Dict[str, Dict[int, Frame]], 
                         k_values: List[int]) -> pd.DataFrame:
@@ -243,7 +262,7 @@ def gen_metrics_graph(anova_path: str, output_dir=None):
             for i, part in enumerate(parts):
                 plt.plot(k_set, metric_matrix[i], label=part)
             plt.legend()
-            output_path = anova_path.replace("table", metric).replace(".txt", ".png")
+            output_path = os.path.basename(anova_path).replace("table", metric).replace(".txt", ".png")
             if output_dir:
                 output_path = os.path.join(output_dir, output_path)
             plt.savefig(output_path)
@@ -258,7 +277,7 @@ def gen_metrics_graph(anova_path: str, output_dir=None):
             for i, part in enumerate(parts):
                 plt.plot(k_set, map_to_gain(metric_matrix[i]), label=part)
             plt.legend()
-            output_path = anova_path.replace("table", gain_metric).replace(".txt", ".png")
+            output_path = os.path.basename(anova_path).replace("table", gain_metric).replace(".txt", ".png")
             if output_dir:
                 output_path = os.path.join(output_dir, output_path)
             plt.savefig(output_path)
@@ -324,6 +343,34 @@ def parse_anova_file(anova_path: str) -> Tuple[List[int], List[TestPart]]:
     log_info("Parsing complete")
     return k_values, parts         
 
+import pickle
+
+def save_resume_anova_context(ctx: AnovaContext):
+    path = f"ANOVA_RESUME_{os.getpid()}.ctx"
+    try:
+        with open(path, "wb") as f:
+            pickle.dump(ctx, f)
+        print(f"[INFO] ANOVA context saved to '{path}'")
+    except Exception as e:
+        print(f"[ERROR] Failed to save ANOVA context: {e}")
+
+def load_resume_anova_context(ctx_path: str) -> AnovaContext:
+    try:
+        with open(ctx_path, "rb") as f:
+            ctx_loaded = pickle.load(f)
+        print(f"[INFO] Resuming ANOVA from '{ctx_path}'")
+        ctx_loaded.isResumed = True
+        return ctx_loaded
+    except Exception as e:
+        print(f"[ERROR] Failed to load ANOVA context: {e}")
+        return AnovaContext()
+
+def handle_exception_save_anova_context(e:Exception):
+    print(f"[ERROR] '{e}'")
+    log_info("Saving Current ANOVA Session Context")
+    save_resume_anova_context(anova_context)
+    exit()       
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Anova Table/Graphs Generator")
     parser.add_argument("--source", "-S", nargs="?",
@@ -344,22 +391,52 @@ if __name__ == "__main__":
                         help="Heuristic to use in path planning") 
     parser.add_argument("--verbose", "-V", action="store_true",
                         help="Enable verbose logging")
+    parser.add_argument("--resume", "-F", nargs="?", default=None,
+                        help="Resume ANOVA test from an existing state") 
     
+    anova_context = AnovaContext()
+
     args = parser.parse_args()
     VERBOSE = args.verbose
-    
-    solver_runs = args.solver_runs
-    seed = args.seed
-    distance = args.distance
-    sampling_iterations = args.iterations
-    
-    os.makedirs(args.output, exist_ok=True)
+
+    import signal,sys
+
+    def on_sigint(signum, frame):
+        handle_exception_save_anova_context(KeyboardInterrupt())
+        sys.exit(1)
+
+    signal.signal(signal.SIGINT, on_sigint)
+
+    if args.resume is None:
+        anova_context.args["sampling_iterations"] = args.iterations 
+        anova_context.args["output"]      = args.output
+        anova_context.args["source"]      = args.source
+        anova_context.args["solver_runs"] = args.solver_runs 
+        anova_context.args["seed"]        = args.seed 
+        anova_context.args["distance"]    = args.distance 
+        anova_context.args["heuristic"]   = args.heuristic
+    else:
+        if os.path.exists(args.resume):
+            anova_context = load_resume_anova_context(args.resume)
+            log_info("Anova Context Loaded From Previous Session")
+            log_info("Anova Context Struct:")
+            if VERBOSE:
+                print("\n".join([f" "*4+f"{k} = {v}" for k,v in anova_context.args.items()]))
+                print(" "*4 + f"isResumed = {anova_context.isResumed}")
+                print(" "*4 + f"current_step = {anova_context.current_step}")
+                print(" "*4 + f"current_part = {anova_context.current_part}")
+                print(" "*4 + f"current_kval = {anova_context.current_kval}")
+                print(" "*4 + f"current_iteration = {anova_context.current_iteration}")
+        else:
+            print(f"[ERROR] '{os.path.relpath(args.resume)}' Not Found")
+
+    os.makedirs(anova_context.args["output"], exist_ok=True)
 
     if args.graphs:
         table_path = args.graphs 
         if os.path.exists(table_path):
             try:
-                gen_metrics_graph(table_path, args.output)
+                gen_metrics_graph(table_path, anova_context.args["output"])
             except Exception as e:
                 print(f"[ERROR] Parsing went wrong - {e}")
         else:
@@ -367,21 +444,26 @@ if __name__ == "__main__":
         exit(1)
     
     log_info("Initializing strategy")
-    strategy = Strategy(distance=distance, seed=seed, runs=solver_runs)
+    strategy = Strategy(distance=anova_context.args["distance"], 
+                        seed=anova_context.args["seed"], 
+                        runs=anova_context.args["solver_runs"])
     
-    log_info(f"Parsing source file: {args.source}")
-    k_values, parts = parse_anova_file(args.source)
+    log_info(f"Parsing source file: {anova_context.args['source']}")
+    k_values, parts = parse_anova_file(anova_context.args["source"])
     
     log_info("Creating experimental data frame")
-    experimental_data = create_data_frame(strategy, sampling_iterations, parts, k_values)
+    experimental_data = create_data_frame(anova_context,
+                                        strategy, 
+                                        anova_context.args["sampling_iterations"], 
+                                        parts, 
+                                        k_values)
     
     log_info("Generating ANOVA table from experimental data")
     anova_df = generate_anova_table(experimental_data, k_values)
     
-    dump_path = os.path.join(args.output, f"anova_table_{args.heuristic}.txt")
+    heuristic = anova_context.args["heuristic"]
+    dump_path = os.path.join(anova_context.args["output"], f"anova_table_{heuristic}.txt")
     dump_anova_table(anova_df, dump_path)
-    
-    plot_path = os.path.join(args.output, f"anova_results_{args.heuristic}.png")
+    plot_path = os.path.join(anova_context.args["output"], f"anova_results_{heuristic}.png")
     plot_anova_table(anova_df, filename=plot_path)
-    
     log_info("Process completed successfully!")

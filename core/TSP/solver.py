@@ -33,4 +33,4 @@ class NoSolver(Solver):
         if initial_path is not None:
             return 1,Tour(initial_path)
         else:
-            return 1,Tour([i for i in range(points.shape[0])])
+            return 1,Tour(np.array([i for i in range(points.shape[0])]))

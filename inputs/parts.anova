@@ -1,7 +1,8 @@
 K: 
     1 , 2 , 4 , 6 , 8 , 12  
 PARTS:
+    Tie: individual/Part_Wang_transformed.stl,scale = 1.5
     Cframe:  individual/Cframe.stl
-    Flange:  individual/flange16furos.stl, scale=0.8
+    Flange:  individual/flange16furos.stl, scale=0.5
     Gripper: individual/gripperroboticmaior.stl
     Rabbit:  assets/txt/formas/rabbit.txt
