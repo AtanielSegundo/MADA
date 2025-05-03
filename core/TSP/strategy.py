@@ -204,8 +204,8 @@ def mergedGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple[G
 
 
 AVAILABLE_GENERATORS = {
-    "raw" : rawGenerator,
     "clusters" : clustersGenerator,
+    "raw" : rawGenerator,
     "merged" : mergedGenerator
 }
 
