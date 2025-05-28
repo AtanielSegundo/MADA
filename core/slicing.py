@@ -70,11 +70,10 @@ def transformStl(stl_path: str,
                  origin: List[float] = [0.0, 0.0, 0.0],
                  rotation: np.ndarray = np.array([0, 0, 0]),
                  scale: float = 1.0,
-                 dropToPlataform: bool = True) -> None:
+                 dropToPlataform: bool = True) -> str:
     """
     Transforms an STL file by applying scaling, translation, rotation, 
     and optionally dropping it to the platform, then saves it.
-    
     Args:
         stl_path (str): Path to the input STL file.
         output_path (str): Path to save the transformed STL file.
@@ -94,6 +93,7 @@ def transformStl(stl_path: str,
     transformed_stl_path = join(output_path, f"{basename(stl_path).split('.')[0]}_transformed.stl")
     solidPart.geometry.export(transformed_stl_path)
     print(f"Transformed STL saved at: {transformed_stl_path}")
+    return transformed_stl_path
 
 def sliceStlVector(stl_path: str, n_slices=6, z_step=14,
                    origin: List[float] = [5.0, 10.0, 0.0],
