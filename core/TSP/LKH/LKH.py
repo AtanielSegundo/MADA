@@ -69,9 +69,22 @@ def custom_lkh_solve(solver='LKH', problem=None,merge_tour_files=None, **params)
 class LKH(Solver):
     def __init__(self, temporary_folder,lkh_exe="core/TSP/LKH/LKH.exe",**kwargs):
         super().__init__(temporary_folder)
-        self.lkh_exe = lkh_exe
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        exe_path = os.path.join(base_dir, lkh_exe)
+        if not os.path.exists(exe_path):
+            found = self._find_executable(base_dir, "LKH.exe")
+            if found: exe_path = found
+            else:
+                raise FileNotFoundError("Não foi possível localizar LKH.exe em nenhuma subpasta de '{}'".format(base_dir))
+        self.lkh_exe = exe_path
         self.distance_matrix_file = None
         self.initial_tour_file = None
+
+    def _find_executable(self, start_dir: str, filename: str) -> str:
+        for root, dirs, files in os.walk(start_dir):
+            if filename in files:
+                return os.path.join(root, filename)
+        return None
 
     def setDistanceMatrix(self,points:np.ndarray,suffix:str="",start_end:Tuple[int, int]=None,**kwargs):
         file_name = "points_distance_matrix_file_"+suffix
