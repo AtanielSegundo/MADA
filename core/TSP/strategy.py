@@ -259,7 +259,7 @@ class Strategy:
 
     def solve(self, layer: Layer, tsp_solver: str, generator: str,
               tag: str = None, end_type: str = "closed", initial_heuristic: str = "std"):
-        tag = tag or f"{layer.tag}_{generator}_{end_type}_{initial_heuristic}"
+        tag = tag or f"{layer.tag}_{generator}_{end_type}_{initial_heuristic}.png"
         self.setHandlers(generator, end_type, initial_heuristic)
         solver_str = tsp_solver
         tsp_solver:Type[Solver] = AVAILABLE_SOLVERS.get(solver_str,None)
