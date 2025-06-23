@@ -6,11 +6,13 @@ import lkh
 from typing import Tuple,Type
 from core.visualize._2d import SlicesPlotter
 from core.Points.Grid import generateGridAndClusters,Cluster
+from core.Points.Grid import Grid as GridObj
 from core.Points.operations import compute_angle_delta_mean
 from core.TSP.solver import Solver,NoSolver
 from core.Tour import generateCH,generateDummyTour,generateCH_with_dummy,Tour,openEnd,closeEnd,TourEnd
 from core.Layer import Layer
 from core.TSP.LKH.LKH import LKH
+from core.Points.operations import compute_distance_matrix_numba_parallel
 
 angle_delta = float
 path_lenght = float
@@ -203,6 +205,131 @@ def mergedGenerator(tag:str,solver:Type[Solver],layer:Layer,strategy) -> Tuple[G
     return grid,Tour(np.array(best_path)),metrics
 
 
+def pick_first_border_contour(layer_data, center, first_point):
+    best_layer_idx = None
+    best_point_idx = None
+    best_d_fp      = np.inf
+    best_r_cent    = -np.inf
+
+    for k, contour in enumerate(layer_data):
+        # 1) distances to first_point
+        dists_fp = np.linalg.norm(contour - first_point, axis=1)
+        i_min    = dists_fp.argmin()
+        d_fp     = dists_fp[i_min]
+
+        # 2) radii from center
+        radii  = np.linalg.norm(contour - center, axis=1)
+        r_cent = radii.max()
+
+        # 3) pick by (smallest d_fp, tie-break: largest r_cent)
+        if (d_fp < best_d_fp) or (d_fp == best_d_fp and r_cent > best_r_cent):
+            best_layer_idx = k
+            best_point_idx = i_min
+            best_d_fp      = d_fp
+            best_r_cent    = r_cent
+
+    return best_layer_idx, best_point_idx, best_d_fp, best_r_cent
+
+def interpolate_contour(contour, step):
+    """Interpolate a closed contour to ensure max segment length <= step"""
+    if len(contour) == 0:
+        return contour
+    poly = np.vstack([contour, contour[0]])
+    new_poly = []
+    for i in range(len(poly) - 1):
+        p0 = poly[i]
+        p1 = poly[i+1]
+        new_poly.append(p0)
+        delta = p1 - p0
+        d = np.linalg.norm(delta)
+        if d > step:
+            num_segments = int(np.ceil(d / step))
+            for j in range(1, num_segments):
+                t = j / num_segments
+                new_poly.append(p0 + t * delta)
+    new_poly = np.array(new_poly)
+    return new_poly
+
+def compute_tour_length(points: np.ndarray) -> float:
+    """
+    Given an (N,2) array of sequential points, returns the sum of
+    Euclidean distances between each consecutive pair.
+    """
+    diffs = points[1:] - points[:-1]
+    seg_lengths = np.linalg.norm(diffs, axis=1)
+    return seg_lengths.sum()
+
+def merge_border_contours(distance: float,
+                          layer: Layer,
+                          grid: Grid,
+                          best_tour: Tour,
+                          metrics: Metrics):
+    start_exec_time = time.time()
+    new_grid = []
+    total_pts = grid.len 
+    center = np.mean(grid.points, axis=0)
+    first_pt = grid.points[best_tour.path[0]]
+    
+    f_border_idx, f_border_pt_idx, _, _ = pick_first_border_contour(
+        layer.data, center, first_pt)
+    
+    # Interpolate and rotate first border
+    f_border_interp = interpolate_contour(layer.data[f_border_idx], distance)
+    dists = np.linalg.norm(f_border_interp - first_pt, axis=1)
+    f_i0 = dists.argmin()
+    f_border_rotated = np.roll(f_border_interp, -f_i0, axis=0)
+    new_grid.extend(f_border_rotated)  
+    total_pts += len(f_border_interp)
+
+    # 2. Map other borders to grid points
+    grid_to_border_idxs = []
+    borders_idxs = []
+    for k, border in enumerate(layer.data):
+        if k == f_border_idx:
+            continue
+        dm = compute_distance_matrix_numba_parallel(
+            grid.points.astype(np.float32),
+            border.astype(np.float32)
+        )
+        flat_idx = dm.argmin()
+        i_grid, i_border = np.unravel_index(flat_idx, dm.shape)
+        grid_to_border_idxs.append(i_grid)
+        borders_idxs.append((k, i_border))
+    
+    g2b_map = {g: (b, p) for g, (b, p) in zip(grid_to_border_idxs, borders_idxs)}
+    grid_hits = set(grid_to_border_idxs)
+    grid_hits.add(best_tour.path[0]) 
+
+    # 3. Build new path: grid points + interpolated borders
+    for idx in best_tour.path:
+        if idx in grid_hits:
+            if idx == best_tour.path[0]:
+                border_idx, border_pt_idx = f_border_idx, f_border_pt_idx
+            else:
+                border_idx, border_pt_idx = g2b_map[idx]
+            attach_pt = layer.data[border_idx][border_pt_idx]
+            border_interp = interpolate_contour(layer.data[border_idx], distance)
+            dists = np.linalg.norm(border_interp - attach_pt, axis=1)
+            i0 = dists.argmin()
+            border_rotated = np.roll(border_interp, -i0, axis=0)
+            new_grid.extend(border_rotated)
+            total_pts += len(border_interp)
+        new_grid.append(grid.points[idx])
+    
+    # 4. Prepare output
+    pts = np.array(new_grid, dtype=np.float64).reshape(-1, 2)
+    new_best_tour = Tour(np.arange(total_pts))
+    new_grid = GridObj(pts)
+    angle_delta_mean = compute_angle_delta_mean(new_grid.points,new_best_tour.path)
+    end_exec_time = time.time()
+    new_metrics = Metrics(
+        nodes_count=total_pts,
+        execution_time=metrics.execution_time + (end_exec_time - start_exec_time),
+        tour_lenght=compute_tour_length(new_grid.points),
+        angle_delta_mean=angle_delta_mean
+    )
+    return new_grid, new_best_tour, new_metrics
+
 AVAILABLE_GENERATORS = {
     "clusters" : clustersGenerator,
     "raw" : rawGenerator,
@@ -222,12 +349,16 @@ AVAILABLE_SOLVERS = {
 }
 
 class Strategy:
-    def __init__(self, output_dir="./outputs", n_clusters=6, distance=7,
-                 border_distance=0, seed=None, save_fig=False, runs: int = 5):
+    def __init__(self, output_dir="./outputs", 
+                 n_clusters=6, distance=7,
+                 border_distance=0, seed=None, 
+                 save_fig=False, runs: int = 5,
+                 use_border_contours=False):
         self.n_cluster = n_clusters
         self.distance = distance
         self.generator = None
         self.end_type = None
+        self.use_border_contours = use_border_contours
         self.initial_heuristic = None
         self.seed = seed or int(time.time())
         self.save_fig = save_fig
@@ -270,6 +401,9 @@ class Strategy:
             plotter = SlicesPlotter([None], tile_direction='horizontal')
             plotter.set_random_usable_colors(self.n_cluster)
         grid, best_tour, metrics = self.generator(tag, tsp_solver, layer, self)
+        
+        if self.use_border_contours:
+            grid, best_tour, metrics = merge_border_contours(self.distance,layer,grid, best_tour, metrics)
         if self.save_fig:
             plotter.set_background_colors(['black'])
             start_point = grid.points[best_tour.path[0]]

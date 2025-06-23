@@ -59,7 +59,6 @@ ctx = CTX()
 
 help_asked = lambda params : any(param in HELP_FUNCTION_NAMES for param in params) 
 
-
 def check_params(*opts):
     result = all([(n in params or "all" in params) for n in opts])
     if result == False:
